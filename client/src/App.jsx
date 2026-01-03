@@ -2,6 +2,12 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 
+// ✅ MVEG pages
+import MvegLayout from "./pages/mveg/MvegLayout";
+import MvegExplain from "./pages/mveg/MvegExplain";
+import MvegLibrary from "./pages/mveg/MvegLibrary";
+import MvegTools from "./pages/mveg/MvegTools";
+
 function NotFoundInline() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -33,7 +39,15 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
 
-      {/* Placeholder routes (we’ll build these pages next, after Home is confirmed) */}
+      {/* ✅ MVEG module */}
+      <Route path="/mveg" element={<MvegLayout />}>
+        <Route index element={<Navigate to="/mveg/explain" replace />} />
+        <Route path="explain" element={<MvegExplain />} />
+        <Route path="library" element={<MvegLibrary />} />
+        <Route path="tools" element={<MvegTools />} />
+      </Route>
+
+      {/* Placeholder routes */}
       <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/contact" element={<Navigate to="/" replace />} />
 
