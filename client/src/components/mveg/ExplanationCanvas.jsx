@@ -1,5 +1,6 @@
 import React from "react";
-import { Copy, FileDown, RefreshCw } from "lucide-react";
+import { Copy, FileDown, RefreshCw, UserCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import MarkdownView from "./MarkdownView";
 
 export default function ExplanationCanvas({
@@ -9,6 +10,8 @@ export default function ExplanationCanvas({
   onRegenerate,
   loading,
 }) {
+  const navigate = useNavigate();
+
   return (
     <div className="h-full flex flex-col px-6 py-6">
       {/* 🔧 FIX: bottom padding equals dock height */}
@@ -19,12 +22,34 @@ export default function ExplanationCanvas({
         >
           {/* Question */}
           <div className="px-6 py-6 border-b border-slate-200/70 dark:border-white/10">
-            <div className="text-xs tracking-widest font-semibold text-slate-500 dark:text-slate-400">
-              QUESTION
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-xs tracking-widest font-semibold text-slate-500 dark:text-slate-400">
+                  QUESTION
+                </div>
+                <h1 className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">
+                  {active?.question || "—"}
+                </h1>
+              </div>
+
+              {/* 🎓 Avatar / Tutor Button */}
+              <button
+                onClick={() =>
+                  navigate("/tutor", {
+                    state: {
+                      question: active?.question || "",
+                      explanation: active?.answer || "",
+                    },
+                  })
+                }
+                className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl
+                           bg-slate-900 text-white hover:bg-slate-800 transition
+                           dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+              >
+                <UserCircle2 size={18} />
+                Tutor
+              </button>
             </div>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">
-              {active?.question || "—"}
-            </h1>
           </div>
 
           {/* Answer */}
