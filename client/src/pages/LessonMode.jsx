@@ -271,7 +271,19 @@ export default function LessonMode() {
       </span>{" "}
       based on your learning stage.
     </p>
+    
   </div>
+  {/* ✅ Back Button */}
+    <button
+      onClick={() => window.history.back()}
+      className="inline-flex items-center gap-2 rounded-2xl px-4 py-2
+                 text-sm font-semibold
+                 border border-slate-200/70 bg-white/70 hover:bg-white
+                 dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60
+                 transition"
+    >
+      ← Back🏠 
+    </button>
 </div>
 
 
@@ -381,7 +393,7 @@ function Gbtn({ label, onClick, danger }) {
     <button
       onClick={onClick}
       className={[
-        "px-0 py-2 rounded-2xl text-[13px] font-semibold transition",
+        "px-2 py-2 rounded-2xl text-[13px] font-semibold transition",
         danger
           ? "bg-red-500/10 text-red-600 ring-1 ring-red-500/30 hover:bg-red-500/20"
           : "bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-500 text-white hover:opacity-90",
