@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { HelpCircle, Sparkles, Wand2 } from "lucide-react";
 import { extractKeyTerms } from "../../utils/mvegText";
+import { useMveg } from "../../pages/mveg/mvegStore";
 
 export default function StudyTools({ answerText, drawer = false }) {
-  const [strict, setStrict] = useState(true);
+  const { strict, setStrict } = useMveg(); // ✅ GLOBAL
   const [level, setLevel] = useState(55);
 
   const terms = useMemo(
