@@ -1,5 +1,6 @@
 // client/src/pages/ChatPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import AppShell from "../../components/StudyBuddy/AppShell.jsx";
 import { api } from "../../lib/api.js";
 import { getUserId, setUserId, resetUserId } from "../../lib/user.js";
 
@@ -80,7 +81,6 @@ export default function ChatPage() {
     setSessions((prev) => prev.filter((s) => s._id !== sessionId));
 
     if (activeSessionId === sessionId) {
-      // open another session or create a new one
       const remaining = sessions.filter((s) => s._id !== sessionId);
       if (remaining.length) {
         await openSession(remaining[0]._id);
@@ -110,7 +110,6 @@ export default function ChatPage() {
         }
       } catch (e) {
         console.error("init error:", e);
-        // show welcome anyway
         setMessages([WELCOME]);
       }
     })();
@@ -190,7 +189,6 @@ export default function ChatPage() {
       formData.append("sessionId", activeSessionId);
       formData.append("title", pdfTitle.trim());
 
-      // ✅ new backend endpoint
       const res = await api.post(`/docs/pdf`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -262,9 +260,14 @@ export default function ChatPage() {
   // ---------- UI ----------
   const renderMessage = (m) => {
     const isUser = m.role === "user";
+
     const bubble = isUser
-      ? "bg-emerald-500 text-white rounded-2xl rounded-tr-sm"
-      : "bg-slate-800/80 text-slate-50 border border-emerald-500/40 rounded-2xl rounded-tl-sm";
+      ? "bg-emerald-600 text-white rounded-2xl rounded-tr-sm"
+      : "bg-white/70 text-slate-900 border border-emerald-500/25 rounded-2xl rounded-tl-sm dark:bg-slate-950/40 dark:text-slate-50 dark:border-emerald-500/40";
+
+    const metaChip =
+      "px-2 py-0.5 rounded-full bg-white/60 text-slate-600 ring-1 ring-slate-200 " +
+      "dark:bg-white/10 dark:text-slate-200 dark:ring-white/10";
 
     return (
       <div
@@ -277,16 +280,10 @@ export default function ChatPage() {
           </div>
 
           {!isUser && (m.mood || typeof m.motivationLevel === "number") && (
-            <div className="mt-1 flex gap-2 text-[11px] text-slate-400">
-              {m.mood && (
-                <span className="px-2 py-0.5 rounded-full bg-slate-700/70">
-                  mood: {m.mood}
-                </span>
-              )}
+            <div className="mt-1 flex gap-2 text-[11px]">
+              {m.mood && <span className={metaChip}>mood: {m.mood}</span>}
               {typeof m.motivationLevel === "number" && (
-                <span className="px-2 py-0.5 rounded-full bg-slate-700/70">
-                  motivation: {m.motivationLevel}/5
-                </span>
+                <span className={metaChip}>motivation: {m.motivationLevel}/5</span>
               )}
             </div>
           )}
@@ -296,274 +293,318 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="hidden md:flex w-80 flex-col border-r border-slate-800 bg-slate-900/60 p-4 gap-4">
-        <div>
-          <h1 className="text-xl font-semibold text-emerald-400">
-            Study Buddy Agent
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Chats are saved. Upload notes per chat like ChatGPT.
-          </p>
-        </div>
-
-        {/* User switch */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
-          <div className="text-sm font-semibold text-emerald-300 mb-2">
-            User
-          </div>
-          <div className="flex gap-2">
-            <input
-              value={userDraft}
-              onChange={(e) => setUserDraft(e.target.value)}
-              className="flex-1 rounded-xl bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-              placeholder="user id"
-            />
-            <button
-              onClick={applyUser}
-              className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-medium"
-            >
-              Apply
-            </button>
-          </div>
-          <button
-            onClick={newRandomUser}
-            className="mt-2 w-full rounded-xl bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs"
+    <AppShell>
+      <div className="flex gap-4">
+        {/* Sidebar */}
+        <aside className="hidden md:flex w-80 flex-col gap-4">
+          <div
+            className="rounded-3xl border border-slate-200/70 bg-white/70 p-4
+                       shadow-[0_14px_55px_-35px_rgba(2,6,23,0.55)]
+                       backdrop-blur
+                       dark:border-white/10 dark:bg-slate-950/40"
           >
-            New random user
-          </button>
-        </div>
-
-        {/* Sessions */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-sm font-semibold text-emerald-300">
-              Chats
+            <div>
+              <h1 className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
+                Study Buddy Agent
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Chats are saved. Upload notes per chat like ChatGPT.
+              </p>
             </div>
-            <button
-              onClick={() => createNewSession()}
-              className="text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2 py-1"
-            >
-              + New
-            </button>
-          </div>
 
-          <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-            {sessions.map((s) => {
-              const active = s._id === activeSessionId;
-              return (
-                <div
-                  key={s._id}
-                  className={`group rounded-xl border ${
-                    active
-                      ? "border-emerald-500/60 bg-slate-900"
-                      : "border-slate-800 bg-slate-950/40"
-                  } p-2`}
+            {/* User switch */}
+            <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
+              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
+                User
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={userDraft}
+                  onChange={(e) => setUserDraft(e.target.value)}
+                  className="flex-1 rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
+                             text-slate-900 placeholder:text-slate-400
+                             focus:outline-none focus:ring-1 focus:ring-emerald-500
+                             dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
+                  placeholder="user id"
+                />
+                <button
+                  onClick={applyUser}
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white"
                 >
-                  {renamingId === s._id ? (
-                    <div className="flex gap-2">
-                      <input
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        className="flex-1 rounded-lg bg-slate-900 border border-slate-700 px-2 py-1 text-xs"
-                      />
-                      <button
-                        onClick={async () => {
-                          await renameSession(s._id, renameValue);
-                          setRenamingId(null);
-                        }}
-                        className="text-xs rounded-lg bg-emerald-600 px-2 py-1"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => openSession(s._id)}
-                      className="w-full text-left"
-                    >
-                      <div className="text-xs text-slate-100 line-clamp-1">
-                        {s.title || "New Chat"}
-                      </div>
-                      <div className="text-[10px] text-slate-500 mt-1">
-                        {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}
-                      </div>
-                    </button>
-                  )}
+                  Apply
+                </button>
+              </div>
+              <button
+                onClick={newRandomUser}
+                className="mt-2 w-full rounded-xl border border-slate-200/70 bg-white/70 hover:bg-white px-3 py-1.5 text-xs
+                           text-slate-700
+                           dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200 transition"
+              >
+                New random user
+              </button>
+            </div>
 
-                  <div className="mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                    <button
-                      onClick={() => {
-                        setRenamingId(s._id);
-                        setRenameValue(s.title || "");
-                      }}
-                      className="text-[11px] px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700"
+            {/* Sessions */}
+            <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+                  Chats
+                </div>
+                <button
+                  onClick={() => createNewSession()}
+                  className="text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-white"
+                >
+                  + New
+                </button>
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {sessions.map((s) => {
+                  const active = s._id === activeSessionId;
+
+                  const card = active
+                    ? "border-emerald-500/40 bg-white/70 dark:bg-slate-950/45"
+                    : "border-slate-200/70 bg-white/50 hover:bg-white/70 dark:border-white/10 dark:bg-slate-950/25 dark:hover:bg-slate-950/40";
+
+                  return (
+                    <div
+                      key={s._id}
+                      className={`group rounded-xl border ${card} p-2 transition`}
                     >
-                      Rename
-                    </button>
-                    <button
-                      onClick={() => deleteSession(s._id)}
-                      className="text-[11px] px-2 py-1 rounded-lg bg-rose-600/80 hover:bg-rose-600"
-                    >
-                      Delete
-                    </button>
+                      {renamingId === s._id ? (
+                        <div className="flex gap-2">
+                          <input
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            className="flex-1 rounded-lg bg-white/70 border border-slate-200 px-2 py-1 text-xs
+                                       text-slate-900
+                                       dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50"
+                          />
+                          <button
+                            onClick={async () => {
+                              await renameSession(s._id, renameValue);
+                              setRenamingId(null);
+                            }}
+                            className="text-xs rounded-lg bg-emerald-600 px-2 py-1 text-white"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => openSession(s._id)}
+                          className="w-full text-left"
+                        >
+                          <div className="text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
+                            {s.title || "New Chat"}
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                            {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}
+                          </div>
+                        </button>
+                      )}
+
+                      <div className="mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                        <button
+                          onClick={() => {
+                            setRenamingId(s._id);
+                            setRenameValue(s.title || "");
+                          }}
+                          className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/70 bg-white/60 hover:bg-white
+                                     text-slate-700
+                                     dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200"
+                        >
+                          Rename
+                        </button>
+                        <button
+                          onClick={() => deleteSession(s._id)}
+                          className="text-[11px] px-2 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {!sessions.length && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    No chats yet…
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Uploads */}
+            <div className="mt-4 space-y-4">
+              <div className="rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
+                <h2 className="text-sm font-semibold mb-2 text-emerald-700 dark:text-emerald-300">
+                  Upload PDF notes (this chat)
+                </h2>
+                <form onSubmit={handlePdfUpload} className="space-y-2">
+                  <input
+                    type="text"
+                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
+                               text-slate-900 placeholder:text-slate-400
+                               focus:outline-none focus:ring-1 focus:ring-emerald-500
+                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
+                    placeholder="Title (e.g., DevOps Lecture 06)"
+                    value={pdfTitle}
+                    onChange={(e) => setPdfTitle(e.target.value)}
+                  />
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    className="w-full text-xs text-slate-600 dark:text-slate-300
+                               file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:border-0
+                               file:bg-emerald-600 file:text-white file:hover:bg-emerald-500"
+                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isUploading || !activeSessionId}
+                    className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500
+                               disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition text-white"
+                  >
+                    {isUploading ? "Uploading…" : "Upload PDF"}
+                  </button>
+                </form>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
+                <h2 className="text-sm font-semibold mb-2 text-emerald-700 dark:text-emerald-300">
+                  Quick text notes (this chat)
+                </h2>
+                <form onSubmit={handleNotesUpload} className="space-y-2">
+                  <input
+                    type="text"
+                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
+                               text-slate-900 placeholder:text-slate-400
+                               focus:outline-none focus:ring-1 focus:ring-emerald-500
+                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
+                    placeholder="Title (e.g., Deadlock summary)"
+                    value={notesTitle}
+                    onChange={(e) => setNotesTitle(e.target.value)}
+                  />
+                  <textarea
+                    rows={4}
+                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
+                               text-slate-900 placeholder:text-slate-400
+                               focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none
+                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
+                    placeholder="Paste short notes here…"
+                    value={notesText}
+                    onChange={(e) => setNotesText(e.target.value)}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isUploading || !activeSessionId}
+                    className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500
+                               disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition text-white"
+                  >
+                    {isUploading ? "Uploading…" : "Save notes"}
+                  </button>
+                </form>
+              </div>
+
+              {uploadStatus && (
+                <div className="text-[11px] text-slate-700 dark:text-slate-200 bg-white/60 border border-slate-200/70 rounded-xl px-3 py-2 backdrop-blur dark:bg-slate-950/30 dark:border-white/10">
+                  {uploadStatus}
+                </div>
+              )}
+
+              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                <div>
+                  Active chat:{" "}
+                  <span className="font-mono text-slate-700 dark:text-slate-200">
+                    {activeSessionId || "none"}
+                  </span>
+                </div>
+                <div className="mt-1">
+                  Backend:{" "}
+                  <span className="text-emerald-700 dark:text-emerald-400">
+                    {import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main chat area */}
+        <main
+          className="flex-1 flex flex-col rounded-3xl border border-slate-200/70 bg-white/70
+                     shadow-[0_18px_80px_-45px_rgba(2,6,23,0.55)]
+                     backdrop-blur
+                     dark:border-white/10 dark:bg-slate-950/40 overflow-hidden"
+        >
+          <header className="px-4 py-3 border-b border-slate-200/70 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
+            <div className="max-w-3xl mx-auto flex items-center justify-between">
+              <div>
+                <div className="text-sm text-emerald-700 dark:text-emerald-300 font-semibold">
+                  {activeSession?.title || "Study Buddy"}
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Your buddy + your notes for this chat.
+                </div>
+              </div>
+              <button
+                onClick={() => createNewSession()}
+                className="md:hidden text-xs rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-white"
+              >
+                + New chat
+              </button>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
+            <div className="max-w-3xl mx-auto">
+              {messages.map(renderMessage)}
+              {isSending && (
+                <div className="flex justify-start mb-3">
+                  <div className="bg-white/70 text-slate-700 border border-slate-200/70 rounded-2xl rounded-tl-sm px-4 py-2 text-xs flex items-center gap-2 backdrop-blur dark:bg-slate-950/40 dark:text-slate-200 dark:border-white/10">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    Study Buddy is thinking…
                   </div>
                 </div>
-              );
-            })}
-            {!sessions.length && (
-              <div className="text-xs text-slate-500">No chats yet…</div>
-            )}
-          </div>
-        </div>
-
-        {/* Uploads */}
-        <div className="space-y-4">
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
-            <h2 className="text-sm font-semibold mb-2 text-emerald-300">
-              Upload PDF notes (this chat)
-            </h2>
-            <form onSubmit={handlePdfUpload} className="space-y-2">
-              <input
-                type="text"
-                className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                placeholder="Title (e.g., DevOps Lecture 06)"
-                value={pdfTitle}
-                onChange={(e) => setPdfTitle(e.target.value)}
-              />
-              <input
-                type="file"
-                accept="application/pdf"
-                className="w-full text-xs text-slate-300 file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-emerald-600 file:text-white file:hover:bg-emerald-500"
-                onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-              />
-              <button
-                type="submit"
-                disabled={isUploading || !activeSessionId}
-                className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition"
-              >
-                {isUploading ? "Uploading…" : "Upload PDF"}
-              </button>
-            </form>
+              )}
+              <div ref={bottomRef} />
+            </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-3">
-            <h2 className="text-sm font-semibold mb-2 text-emerald-300">
-              Quick text notes (this chat)
-            </h2>
-            <form onSubmit={handleNotesUpload} className="space-y-2">
-              <input
-                type="text"
-                className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                placeholder="Title (e.g., Deadlock summary)"
-                value={notesTitle}
-                onChange={(e) => setNotesTitle(e.target.value)}
-              />
+          <footer className="border-t border-slate-200/70 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
+            <form
+              onSubmit={handleSend}
+              className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-end gap-2"
+            >
               <textarea
-                rows={4}
-                className="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none"
-                placeholder="Paste short notes here…"
-                value={notesText}
-                onChange={(e) => setNotesText(e.target.value)}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Tell me how you’re feeling or what you’re stuck on…"
+                className="flex-1 rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-sm
+                           text-slate-900 placeholder:text-slate-400
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none
+                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
               />
               <button
                 type="submit"
-                disabled={isUploading || !activeSessionId}
-                className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition"
+                disabled={isSending || !input.trim() || !activeSessionId}
+                className="shrink-0 rounded-2xl bg-emerald-600 hover:bg-emerald-500
+                           disabled:opacity-60 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 transition text-white"
               >
-                {isUploading ? "Uploading…" : "Save notes"}
+                {isSending ? "Sending…" : "Send"}
               </button>
             </form>
-          </div>
-
-          {uploadStatus && (
-            <div className="text-[11px] text-slate-300 bg-slate-900/80 border border-slate-800 rounded-xl px-3 py-2">
-              {uploadStatus}
-            </div>
-          )}
-
-          <div className="text-[11px] text-slate-500">
-            <div>
-              Active chat:{" "}
-              <span className="font-mono text-slate-300">
-                {activeSessionId || "none"}
-              </span>
-            </div>
-            <div className="mt-1">
-              Backend:{" "}
-              <span className="text-emerald-400">
-                {import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main chat area */}
-      <main className="flex-1 flex flex-col bg-linear-to-b from-slate-950 via-slate-900 to-slate-950">
-        <header className="px-4 py-3 border-b border-slate-800 bg-slate-950/90 backdrop-blur">
-          <div className="max-w-3xl mx-auto flex items-center justify-between">
-            <div>
-              <div className="text-sm text-emerald-300 font-semibold">
-                {activeSession?.title || "Study Buddy"}
-              </div>
-              <div className="text-[11px] text-slate-400">
-                Your buddy + your notes for this chat.
-              </div>
-            </div>
-            <button
-              onClick={() => createNewSession()}
-              className="md:hidden text-xs rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2"
-            >
-              + New chat
-            </button>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
-          <div className="max-w-3xl mx-auto">
-            {messages.map(renderMessage)}
-            {isSending && (
-              <div className="flex justify-start mb-3">
-                <div className="bg-slate-800/80 text-slate-200 rounded-2xl rounded-tl-sm px-4 py-2 text-xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  Study Buddy is thinking…
-                </div>
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-        </div>
-
-        <footer className="border-t border-slate-800 bg-slate-950/90 backdrop-blur">
-          <form
-            onSubmit={handleSend}
-            className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-end gap-2"
-          >
-            <textarea
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Tell me how you’re feeling or what you’re stuck on…"
-              className="flex-1 rounded-2xl bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-            />
-            <button
-              type="submit"
-              disabled={isSending || !input.trim() || !activeSessionId}
-              className="shrink-0 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 transition"
-            >
-              {isSending ? "Sending…" : "Send"}
-            </button>
-          </form>
-        </footer>
-      </main>
-    </div>
+          </footer>
+        </main>
+      </div>
+    </AppShell>
   );
 }
