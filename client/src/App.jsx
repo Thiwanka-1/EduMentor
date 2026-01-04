@@ -14,6 +14,8 @@ import AceDashboard from "./pages/ace/AceDashboard";
 import AceCreate from "./pages/ace/AceCreate";
 import AceAnalysis from "./pages/ace/AceAnalysis";
 import AceFlashcards from "./pages/ace/AceFlashcards";
+import AceSession from "./pages/ace/AceSession";
+import AceReinforce from "./pages/ace/AceReinforce";
 
 
 
@@ -62,6 +64,8 @@ export default function App() {
       <Route path="create" element={<AceCreate />} />
       <Route path="analysis" element={<AceAnalysis />} />
       <Route path="flashcards" element={<AceFlashcards />} />
+      <Route path="session" element={<AceSession />} />
+      <Route path="reinforce" element={<AceReinforce />} />
       </Route>
 
       {/* Placeholder routes */}

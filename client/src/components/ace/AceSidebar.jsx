@@ -35,7 +35,7 @@ export default function AceSidebar() {
     {
       label: "Weak Points",
       icon: <AlertTriangle size={18} />,
-      to: "/ace/weak-points",
+      to: "/ace/reinforce",
     },
   ];
 
@@ -48,7 +48,7 @@ export default function AceSidebar() {
         <div>
           <p className="font-semibold">ReinforceAI</p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Adaptive Engine v2.4
+            Adaptive Engine  
           </p>
         </div>
       </div>
