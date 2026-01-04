@@ -26,8 +26,23 @@ export default function Sidebar({
   }, [items, q]);
 
   return (
-    <aside className="w-[300px] shrink-0 p-4 flex flex-col gap-4">
-      <div className="flex items-center gap-2">
+    <aside
+      className={[
+        // ✅ critical: full height + allow inner flex children to shrink
+        "h-full min-h-0 w-[300px] shrink-0 p-4 flex flex-col",
+
+        // ✅ spacing between blocks
+        "gap-4",
+
+        // ✅ divider + glass
+        "border-r border-slate-200/70 dark:border-white/10",
+        "bg-white/40 dark:bg-slate-950/40 backdrop-blur",
+
+        drawer ? "w-full" : "",
+      ].join(" ")}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-2 shrink-0">
         <div className="h-9 w-9 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 grid place-items-center font-bold">
           M
         </div>
@@ -41,17 +56,19 @@ export default function Sidebar({
         </div>
       </div>
 
+      {/* New */}
       <button
         onClick={onNew}
         className="h-11 rounded-2xl bg-slate-900 text-white hover:bg-slate-800
-                   dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition flex items-center justify-center gap-2"
+                   dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition flex items-center justify-center gap-2 shrink-0"
       >
         <Plus size={16} /> New Explanation
       </button>
 
+      {/* Search */}
       <div
         className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-3 h-10
-                      dark:border-white/10 dark:bg-slate-950/40"
+                   dark:border-white/10 dark:bg-slate-950/40 shrink-0"
       >
         <Search size={16} className="text-slate-500 dark:text-slate-400" />
         <input
@@ -63,7 +80,7 @@ export default function Sidebar({
       </div>
 
       {/* Nav */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 shrink-0">
         <button
           onClick={() => go("/mveg/explain")}
           className={[
@@ -101,12 +118,14 @@ export default function Sidebar({
         </button>
       </div>
 
-      <div className="mt-2">
-        <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400 font-semibold mb-2">
+      {/* ✅ Scroll section MUST be flex-1 + min-h-0 */}
+      <div className="flex-1 min-h-0 flex flex-col mt-2">
+        <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400 font-semibold mb-2 shrink-0">
           MY EXPLANATIONS
         </div>
 
-        <div className="flex-1 overflow-y-auto pr-1 space-y-2">
+        {/* ✅ this will now reach the bottom and scroll */}
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
           {filtered.map((it) => (
             <SidebarItem
               key={it._id}
@@ -126,7 +145,8 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="mt-auto text-xs text-slate-500 dark:text-slate-400 pt-2">
+      {/* Footer */}
+      <div className="text-xs text-slate-500 dark:text-slate-400 pt-2 shrink-0">
         EduMentor • MVEG Module
       </div>
     </aside>
