@@ -46,9 +46,10 @@ function InnerLayout() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <div className="h-screen flex">
+      {/* 🔧 FIX: min-h-0 added */}
+      <div className="h-screen flex min-h-0">
         {/* Desktop left sidebar */}
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex min-h-0">
           <Sidebar
             tab={tab}
             items={items}
@@ -68,7 +69,8 @@ function InnerLayout() {
         </div>
 
         {/* Main column */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* 🔧 FIX: min-h-0 added */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar
             breadcrumb={breadcrumb}
             onOpenLeft={() => setLeftOpen(true)}
@@ -76,15 +78,18 @@ function InnerLayout() {
             onGoHome={() => nav("/")}
           />
 
-          <div className="flex-1 flex min-w-0">
+          {/* 🔧 FIX: min-h-0 added */}
+          <div className="flex-1 flex min-w-0 min-h-0">
             {/* Center column */}
-            <div className="flex-1 min-w-0 relative">
-              {/* content needs bottom padding because dock is fixed */}
-              <div className="h-full pb-[96px]">
+            {/* 🔧 FIX: min-h-0 added */}
+            <div className="flex-1 min-w-0 min-h-0 relative">
+              {/* Scrollable content area */}
+              {/* 🔧 FIX: overflow + min-h-0 */}
+              <div className="h-full min-h-0 overflow-y-auto pb-[96px]">
                 <Outlet />
               </div>
 
-              {/* ✅ Fixed dock only for MVEG explain flow */}
+              {/* Fixed bottom dock */}
               <div className="absolute left-0 right-0 bottom-0 border-t border-slate-200/70 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-slate-950/55">
                 <form
                   onSubmit={onSubmit}
@@ -92,7 +97,7 @@ function InnerLayout() {
                 >
                   <div
                     className="rounded-3xl border border-slate-200/70 bg-white/70 p-3 flex items-center gap-3
-                                  dark:border-white/10 dark:bg-slate-950/40"
+                               dark:border-white/10 dark:bg-slate-950/40"
                   >
                     <input
                       value={input}
@@ -114,7 +119,7 @@ function InnerLayout() {
             </div>
 
             {/* Desktop right tools */}
-            <div className="hidden xl:flex">
+            <div className="hidden xl:flex min-h-0">
               <StudyTools answerText={active?.answer || ""} />
             </div>
           </div>

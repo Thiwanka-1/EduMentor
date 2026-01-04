@@ -11,11 +11,13 @@ export default function ExplanationCanvas({
 }) {
   return (
     <div className="h-full flex flex-col px-6 py-6">
-      <div className="max-w-4xl w-full mx-auto">
+      {/* 🔧 FIX: bottom padding equals dock height */}
+      <div className="max-w-4xl w-full mx-auto pb-[120px]">
         <div
           className="rounded-3xl border border-slate-200/70 bg-white/70 backdrop-blur overflow-hidden
-                        dark:border-white/10 dark:bg-slate-950/40"
+                     dark:border-white/10 dark:bg-slate-950/40"
         >
+          {/* Question */}
           <div className="px-6 py-6 border-b border-slate-200/70 dark:border-white/10">
             <div className="text-xs tracking-widest font-semibold text-slate-500 dark:text-slate-400">
               QUESTION
@@ -25,6 +27,7 @@ export default function ExplanationCanvas({
             </h1>
           </div>
 
+          {/* Answer */}
           <div className="px-6 py-6">
             {loading ? (
               <div className="space-y-3 animate-pulse">
@@ -37,6 +40,7 @@ export default function ExplanationCanvas({
             )}
           </div>
 
+          {/* Source material */}
           <div className="px-6 py-5 border-t border-slate-200/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
               Source Material
@@ -52,10 +56,12 @@ export default function ExplanationCanvas({
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto mt-4 flex items-center gap-3">
+        {/* 🔧 FIX: Action bar now ABOVE dock */}
+        <div className="mt-6 flex items-center gap-3">
           <button
             onClick={onCopy}
-            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition flex items-center gap-2
+            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition
+                       flex items-center gap-2
                        dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-white/5"
           >
             <Copy size={16} /> Copy
@@ -63,7 +69,8 @@ export default function ExplanationCanvas({
 
           <button
             onClick={onExportPdf}
-            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition flex items-center gap-2
+            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition
+                       flex items-center gap-2
                        dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-white/5"
           >
             <FileDown size={16} /> Export PDF
@@ -73,7 +80,8 @@ export default function ExplanationCanvas({
 
           <button
             onClick={onRegenerate}
-            className="h-11 px-4 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-2
+            className="h-11 px-4 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition
+                       flex items-center gap-2
                        dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
           >
             <RefreshCw size={16} /> Regenerate
