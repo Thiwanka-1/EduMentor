@@ -272,18 +272,41 @@ export default function LessonMode() {
       based on your learning stage.
     </p>
 
-    <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ring-1
-              ${
-                status === "speaking"
-                  ? "bg-teal-500/10 text-teal-600 ring-teal-500/30"
-                  : "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10"
-              }`}
-          >
-            {status === "speaking" ? "Speaking…" : "Ready"}
-          </span>
     
   </div>
+  {/* Status */}
+<div className="flex flex-col items-end gap-1">
+  <span
+    className={`rounded-full px-3 py-1 text-xs font-semibold ring-1 transition
+      ${
+        status === "thinking"
+          ? "bg-violet-500/10 text-violet-600 ring-violet-500/30"
+          : status === "speaking"
+          ? "bg-teal-500/10 text-teal-600 ring-teal-500/30"
+          : "bg-slate-100 text-slate-600 ring-slate-200 dark:bg-white/10 dark:text-slate-300 dark:ring-white/10"
+      }
+    `}
+  >
+    {status === "thinking" && "Thinking…"}
+    {status === "speaking" && "Speaking…"}
+    {status === "idle" && "Ready"}
+  </span>
+
+  {/* 🎧 Speaking wave */}
+  {status === "speaking" && (
+    <div className="flex items-center gap-1 pr-1">
+      {[...Array(4)].map((_, i) => (
+        <span
+          key={i}
+          className="w-1 rounded-full bg-teal-500 animate-wave"
+          style={{ animationDelay: `${i * 0.12}s` }}
+        />
+      ))}
+    </div>
+  )}
+</div>
+
+    
   {/* ✅ Back Button */}
     <button
       onClick={() => window.history.back()}

@@ -117,7 +117,7 @@ export default function TutorMode() {
           <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">
             Chat with a{" "}
             <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-500 bg-clip-text text-transparent">
-              futuristic AI mentor
+              futuristic AI Teacher
             </span>
           </h1>
         </div>
