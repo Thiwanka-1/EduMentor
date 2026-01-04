@@ -1,7 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
-
+import ChatPage from "./pages/StudyBuddy/ChatPage";
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
 import MvegExplain from "./pages/mveg/MvegExplain";
@@ -50,7 +50,7 @@ export default function App() {
       {/* Placeholder routes */}
       <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/contact" element={<Navigate to="/" replace />} />
-
+      <Route path="/study-buddy" element={<ChatPage />} />
       <Route path="*" element={<NotFoundInline />} />
     </Routes>
   );
