@@ -440,6 +440,7 @@ export default function Home() {
             title="3D Avatar Tutor"
             tag="Interactive"
             desc="A future-ready tutor interface for speech + expressions and better engagement."
+            to="/lesson"
           />
           <ModuleCard
             accent="emerald"

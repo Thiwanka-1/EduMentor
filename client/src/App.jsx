@@ -1,6 +1,8 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import TutorMode from "./pages/TutorMode.jsx";
+import LessonMode from "./pages/LessonMode.jsx";
 
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
@@ -50,6 +52,9 @@ export default function App() {
       {/* Placeholder routes */}
       <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/contact" element={<Navigate to="/" replace />} />
+      <Route path="/tutor" element={<TutorMode />} />
+        <Route path="/lesson" element={<LessonMode />} />
+      
 
       <Route path="*" element={<NotFoundInline />} />
     </Routes>
