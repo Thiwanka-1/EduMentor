@@ -1,4 +1,3 @@
-// client/src/pages/ChatPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "../../components/StudyBuddy/AppShell.jsx";
 import { api } from "../../lib/api.js";
@@ -10,6 +9,47 @@ const WELCOME = {
   content:
     "Heyy, I’m your Study Buddy 😊 Tell me how your day is going or what you’re stuck on right now.",
 };
+
+function clsx(...a) {
+  return a.filter(Boolean).join(" ");
+}
+
+function Pill({ children, tone = "neutral" }) {
+  const map = {
+    neutral:
+      "bg-white/60 text-slate-700 ring-slate-200 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10",
+    emerald:
+      "bg-emerald-400/15 text-emerald-800 ring-emerald-400/25 dark:text-emerald-200",
+    indigo:
+      "bg-indigo-400/15 text-indigo-800 ring-indigo-400/25 dark:text-indigo-200",
+    rose:
+      "bg-rose-400/15 text-rose-800 ring-rose-400/25 dark:text-rose-200",
+  };
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
+        map[tone]
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function SidebarSection({ title, right, children }) {
+  return (
+    <div className="rounded-3xl border border-slate-200/70 bg-white/70 p-4 backdrop-blur shadow-[0_14px_55px_-35px_rgba(2,6,23,0.55)] dark:border-white/10 dark:bg-slate-950/40">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+          {title}
+        </h3>
+        {right}
+      </div>
+      <div className="mt-3">{children}</div>
+    </div>
+  );
+}
 
 export default function ChatPage() {
   // user
@@ -35,6 +75,10 @@ export default function ChatPage() {
   // rename session
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
+
+  // UI controls
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState("chats"); // chats | uploads | user
 
   const bottomRef = useRef(null);
 
@@ -262,28 +306,32 @@ export default function ChatPage() {
     const isUser = m.role === "user";
 
     const bubble = isUser
-      ? "bg-emerald-600 text-white rounded-2xl rounded-tr-sm"
-      : "bg-white/70 text-slate-900 border border-emerald-500/25 rounded-2xl rounded-tl-sm dark:bg-slate-950/40 dark:text-slate-50 dark:border-emerald-500/40";
+      ? "bg-emerald-600 text-white rounded-3xl rounded-tr-lg shadow-[0_18px_60px_-45px_rgba(16,185,129,0.85)]"
+      : "bg-white/70 text-slate-900 border border-white/60 rounded-3xl rounded-tl-lg dark:bg-slate-950/40 dark:text-slate-100 dark:border-white/10";
 
-    const metaChip =
-      "px-2 py-0.5 rounded-full bg-white/60 text-slate-600 ring-1 ring-slate-200 " +
-      "dark:bg-white/10 dark:text-slate-200 dark:ring-white/10";
+    const wrapper = isUser ? "justify-end" : "justify-start";
 
     return (
-      <div
-        key={m._id}
-        className={`flex mb-3 ${isUser ? "justify-end" : "justify-start"}`}
-      >
-        <div className="max-w-[82%]">
-          <div className={`${bubble} px-4 py-3 shadow-sm whitespace-pre-wrap text-sm`}>
+      <div key={m._id} className={clsx("flex mb-4", wrapper)}>
+        {/* assistant avatar */}
+        {!isUser && (
+          <div className="mr-3 mt-1 hidden sm:flex">
+            <div className="h-9 w-9 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center font-bold">
+              S
+            </div>
+          </div>
+        )}
+
+        <div className="max-w-[88%] sm:max-w-[78%]">
+          <div className={clsx(bubble, "px-4 py-3 whitespace-pre-wrap text-sm backdrop-blur")}>
             {m.content}
           </div>
 
           {!isUser && (m.mood || typeof m.motivationLevel === "number") && (
-            <div className="mt-1 flex gap-2 text-[11px]">
-              {m.mood && <span className={metaChip}>mood: {m.mood}</span>}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {m.mood && <Pill tone="indigo">mood: {m.mood}</Pill>}
               {typeof m.motivationLevel === "number" && (
-                <span className={metaChip}>motivation: {m.motivationLevel}/5</span>
+                <Pill tone="emerald">motivation: {m.motivationLevel}/5</Pill>
               )}
             </div>
           )}
@@ -292,312 +340,394 @@ export default function ChatPage() {
     );
   };
 
-  return (
-    <AppShell>
-      <div className="flex gap-4">
-        {/* Sidebar */}
-        <aside className="hidden md:flex w-80 flex-col gap-4">
-          <div
-            className="rounded-3xl border border-slate-200/70 bg-white/70 p-4
-                       shadow-[0_14px_55px_-35px_rgba(2,6,23,0.55)]
-                       backdrop-blur
-                       dark:border-white/10 dark:bg-slate-950/40"
-          >
-            <div>
-              <h1 className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
-                Study Buddy Agent
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Chats are saved. Upload notes per chat like ChatGPT.
-              </p>
-            </div>
+  const SidebarContent = (
+    <div className="flex flex-col gap-4">
+      {/* Module header card */}
+      <div className="rounded-3xl border border-white/60 bg-white/70 p-4 backdrop-blur shadow-[0_14px_55px_-35px_rgba(2,6,23,0.55)] dark:border-white/10 dark:bg-slate-950/40">
+        <div className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+          <div className="absolute -top-14 -right-14 h-44 w-44 rounded-full bg-gradient-to-br from-indigo-500/40 via-emerald-400/20 to-transparent blur-2xl" />
+          <div className="relative">
+            <p className="text-xs font-semibold opacity-85">StudyBuddy Agent</p>
+            <h2 className="mt-1 text-lg font-semibold">Your personal study companion</h2>
+            <p className="mt-1 text-xs opacity-80">
+              Chats + notes saved per session • RAG-ready
+            </p>
+          </div>
+        </div>
 
-            {/* User switch */}
-            <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
-              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
-                User
-              </div>
-              <div className="flex gap-2">
-                <input
-                  value={userDraft}
-                  onChange={(e) => setUserDraft(e.target.value)}
-                  className="flex-1 rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
-                             text-slate-900 placeholder:text-slate-400
-                             focus:outline-none focus:ring-1 focus:ring-emerald-500
-                             dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
-                  placeholder="user id"
-                />
-                <button
-                  onClick={applyUser}
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white"
-                >
-                  Apply
-                </button>
-              </div>
+        {/* Tabs */}
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {[
+            { k: "chats", label: "Chats" },
+            { k: "uploads", label: "Uploads" },
+            { k: "user", label: "User" },
+          ].map((t) => {
+            const active = sidebarTab === t.k;
+            return (
               <button
-                onClick={newRandomUser}
-                className="mt-2 w-full rounded-xl border border-slate-200/70 bg-white/70 hover:bg-white px-3 py-1.5 text-xs
-                           text-slate-700
-                           dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200 transition"
+                key={t.k}
+                onClick={() => setSidebarTab(t.k)}
+                className={clsx(
+                  "rounded-2xl px-3 py-2 text-xs font-semibold transition border",
+                  active
+                    ? "bg-emerald-600 text-white border-emerald-500/40 shadow-[0_12px_40px_-30px_rgba(16,185,129,0.8)]"
+                    : "bg-white/60 text-slate-700 border-slate-200/70 hover:bg-white/80 dark:bg-slate-950/30 dark:text-slate-200 dark:border-white/10 dark:hover:bg-slate-900/50"
+                )}
               >
-                New random user
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* CHATS TAB */}
+      {sidebarTab === "chats" && (
+        <SidebarSection
+          title="Chats"
+          right={
+            <button
+              onClick={() => createNewSession()}
+              className="rounded-2xl px-3 py-2 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition"
+            >
+              + New
+            </button>
+          }
+        >
+          <div className="max-h-[55vh] overflow-y-auto pr-1 space-y-2">
+            {sessions.map((s) => {
+              const active = s._id === activeSessionId;
+
+              return (
+                <div
+                  key={s._id}
+                  className={clsx(
+                    "group rounded-2xl border p-3 transition",
+                    active
+                      ? "border-emerald-500/40 bg-white/70 dark:bg-slate-950/45 dark:border-emerald-500/30"
+                      : "border-slate-200/70 bg-white/50 hover:bg-white/80 dark:border-white/10 dark:bg-slate-950/25 dark:hover:bg-slate-900/40"
+                  )}
+                >
+                  {renamingId === s._id ? (
+                    <div className="flex gap-2">
+                      <input
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        className="flex-1 rounded-xl bg-white/70 border border-slate-200 px-3 py-2 text-xs
+                                   text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/50
+                                   dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100"
+                      />
+                      <button
+                        onClick={async () => {
+                          await renameSession(s._id, renameValue);
+                          setRenamingId(null);
+                        }}
+                        className="rounded-xl px-3 py-2 text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-500 transition"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        openSession(s._id);
+                        setSidebarOpen(false);
+                      }}
+                      className="w-full text-left"
+                    >
+                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 line-clamp-1">
+                        {s.title || "New Chat"}
+                      </p>
+                      <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                        {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}
+                      </p>
+                    </button>
+                  )}
+
+                  <div className="mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                    <button
+                      onClick={() => {
+                        setRenamingId(s._id);
+                        setRenameValue(s.title || "");
+                      }}
+                      className="text-[11px] px-3 py-1.5 rounded-xl border border-slate-200/70 bg-white/60 hover:bg-white
+                                 text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200"
+                    >
+                      Rename
+                    </button>
+                    <button
+                      onClick={() => deleteSession(s._id)}
+                      className="text-[11px] px-3 py-1.5 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {!sessions.length && (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                No chats yet…
+              </div>
+            )}
+          </div>
+        </SidebarSection>
+      )}
+
+      {/* UPLOADS TAB */}
+      {sidebarTab === "uploads" && (
+        <>
+          <SidebarSection title="Upload PDF (this chat)">
+            <form onSubmit={handlePdfUpload} className="space-y-2">
+              <input
+                type="text"
+                className="w-full rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-xs
+                           text-slate-900 placeholder:text-slate-400
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50
+                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100 dark:placeholder:text-slate-500"
+                placeholder="Title (e.g., DevOps Lecture 06)"
+                value={pdfTitle}
+                onChange={(e) => setPdfTitle(e.target.value)}
+              />
+              <input
+                type="file"
+                accept="application/pdf"
+                className="w-full text-xs text-slate-600 dark:text-slate-300
+                           file:text-xs file:px-3 file:py-2 file:rounded-xl file:border-0
+                           file:bg-emerald-600 file:text-white file:hover:bg-emerald-500 file:transition"
+                onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+              />
+              <button
+                type="submit"
+                disabled={isUploading || !activeSessionId}
+                className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500
+                           disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2 text-xs font-semibold transition text-white"
+              >
+                {isUploading ? "Uploading…" : "Upload PDF"}
+              </button>
+            </form>
+          </SidebarSection>
+
+          <SidebarSection title="Quick text notes (this chat)">
+            <form onSubmit={handleNotesUpload} className="space-y-2">
+              <input
+                type="text"
+                className="w-full rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-xs
+                           text-slate-900 placeholder:text-slate-400
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50
+                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100 dark:placeholder:text-slate-500"
+                placeholder="Title (e.g., Deadlock summary)"
+                value={notesTitle}
+                onChange={(e) => setNotesTitle(e.target.value)}
+              />
+              <textarea
+                rows={4}
+                className="w-full rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-xs
+                           text-slate-900 placeholder:text-slate-400
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-none
+                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100 dark:placeholder:text-slate-500"
+                placeholder="Paste short notes here…"
+                value={notesText}
+                onChange={(e) => setNotesText(e.target.value)}
+              />
+              <button
+                type="submit"
+                disabled={isUploading || !activeSessionId}
+                className="w-full rounded-2xl bg-emerald-600 hover:bg-emerald-500
+                           disabled:opacity-60 disabled:cursor-not-allowed px-3 py-2 text-xs font-semibold transition text-white"
+              >
+                {isUploading ? "Uploading…" : "Save notes"}
+              </button>
+            </form>
+          </SidebarSection>
+
+          {uploadStatus && (
+            <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-3 text-[11px] text-slate-700 backdrop-blur dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
+              {uploadStatus}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* USER TAB */}
+      {sidebarTab === "user" && (
+        <SidebarSection title="User identity">
+          <div className="space-y-2">
+            <div className="text-xs text-slate-600 dark:text-slate-300">
+              This is your demo user switch (no auth yet).
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={userDraft}
+                onChange={(e) => setUserDraft(e.target.value)}
+                className="flex-1 rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-xs
+                           text-slate-900 placeholder:text-slate-400
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500/50
+                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100 dark:placeholder:text-slate-500"
+                placeholder="user id"
+              />
+              <button
+                onClick={applyUser}
+                className="rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition"
+              >
+                Apply
               </button>
             </div>
 
-            {/* Sessions */}
-            <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                  Chats
-                </div>
-                <button
-                  onClick={() => createNewSession()}
-                  className="text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 px-2 py-1 text-white"
-                >
-                  + New
-                </button>
+            <button
+              onClick={newRandomUser}
+              className="w-full rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white px-4 py-2 text-xs font-semibold
+                         text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200 transition"
+            >
+              New random user
+            </button>
+
+            <div className="pt-2 space-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+              <div>
+                Active chat:{" "}
+                <span className="font-mono text-slate-700 dark:text-slate-200">
+                  {activeSessionId || "none"}
+                </span>
               </div>
-
-              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                {sessions.map((s) => {
-                  const active = s._id === activeSessionId;
-
-                  const card = active
-                    ? "border-emerald-500/40 bg-white/70 dark:bg-slate-950/45"
-                    : "border-slate-200/70 bg-white/50 hover:bg-white/70 dark:border-white/10 dark:bg-slate-950/25 dark:hover:bg-slate-950/40";
-
-                  return (
-                    <div
-                      key={s._id}
-                      className={`group rounded-xl border ${card} p-2 transition`}
-                    >
-                      {renamingId === s._id ? (
-                        <div className="flex gap-2">
-                          <input
-                            value={renameValue}
-                            onChange={(e) => setRenameValue(e.target.value)}
-                            className="flex-1 rounded-lg bg-white/70 border border-slate-200 px-2 py-1 text-xs
-                                       text-slate-900
-                                       dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50"
-                          />
-                          <button
-                            onClick={async () => {
-                              await renameSession(s._id, renameValue);
-                              setRenamingId(null);
-                            }}
-                            className="text-xs rounded-lg bg-emerald-600 px-2 py-1 text-white"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => openSession(s._id)}
-                          className="w-full text-left"
-                        >
-                          <div className="text-xs text-slate-900 dark:text-slate-100 line-clamp-1">
-                            {s.title || "New Chat"}
-                          </div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
-                            {s.updatedAt ? new Date(s.updatedAt).toLocaleString() : ""}
-                          </div>
-                        </button>
-                      )}
-
-                      <div className="mt-2 flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                        <button
-                          onClick={() => {
-                            setRenamingId(s._id);
-                            setRenameValue(s.title || "");
-                          }}
-                          className="text-[11px] px-2 py-1 rounded-lg border border-slate-200/70 bg-white/60 hover:bg-white
-                                     text-slate-700
-                                     dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200"
-                        >
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => deleteSession(s._id)}
-                          className="text-[11px] px-2 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {!sessions.length && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    No chats yet…
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Uploads */}
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
-                <h2 className="text-sm font-semibold mb-2 text-emerald-700 dark:text-emerald-300">
-                  Upload PDF notes (this chat)
-                </h2>
-                <form onSubmit={handlePdfUpload} className="space-y-2">
-                  <input
-                    type="text"
-                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
-                               text-slate-900 placeholder:text-slate-400
-                               focus:outline-none focus:ring-1 focus:ring-emerald-500
-                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
-                    placeholder="Title (e.g., DevOps Lecture 06)"
-                    value={pdfTitle}
-                    onChange={(e) => setPdfTitle(e.target.value)}
-                  />
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    className="w-full text-xs text-slate-600 dark:text-slate-300
-                               file:text-xs file:px-3 file:py-1.5 file:rounded-lg file:border-0
-                               file:bg-emerald-600 file:text-white file:hover:bg-emerald-500"
-                    onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isUploading || !activeSessionId}
-                    className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500
-                               disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition text-white"
-                  >
-                    {isUploading ? "Uploading…" : "Upload PDF"}
-                  </button>
-                </form>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200/70 bg-white/60 p-3 backdrop-blur dark:border-white/10 dark:bg-slate-950/30">
-                <h2 className="text-sm font-semibold mb-2 text-emerald-700 dark:text-emerald-300">
-                  Quick text notes (this chat)
-                </h2>
-                <form onSubmit={handleNotesUpload} className="space-y-2">
-                  <input
-                    type="text"
-                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
-                               text-slate-900 placeholder:text-slate-400
-                               focus:outline-none focus:ring-1 focus:ring-emerald-500
-                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
-                    placeholder="Title (e.g., Deadlock summary)"
-                    value={notesTitle}
-                    onChange={(e) => setNotesTitle(e.target.value)}
-                  />
-                  <textarea
-                    rows={4}
-                    className="w-full rounded-xl bg-white/70 border border-slate-200 px-3 py-1.5 text-xs
-                               text-slate-900 placeholder:text-slate-400
-                               focus:outline-none focus:ring-1 focus:ring-emerald-500 resize-none
-                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
-                    placeholder="Paste short notes here…"
-                    value={notesText}
-                    onChange={(e) => setNotesText(e.target.value)}
-                  />
-                  <button
-                    type="submit"
-                    disabled={isUploading || !activeSessionId}
-                    className="w-full mt-1 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500
-                               disabled:opacity-60 disabled:cursor-not-allowed px-3 py-1.5 transition text-white"
-                  >
-                    {isUploading ? "Uploading…" : "Save notes"}
-                  </button>
-                </form>
-              </div>
-
-              {uploadStatus && (
-                <div className="text-[11px] text-slate-700 dark:text-slate-200 bg-white/60 border border-slate-200/70 rounded-xl px-3 py-2 backdrop-blur dark:bg-slate-950/30 dark:border-white/10">
-                  {uploadStatus}
-                </div>
-              )}
-
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                <div>
-                  Active chat:{" "}
-                  <span className="font-mono text-slate-700 dark:text-slate-200">
-                    {activeSessionId || "none"}
-                  </span>
-                </div>
-                <div className="mt-1">
-                  Backend:{" "}
-                  <span className="text-emerald-700 dark:text-emerald-400">
-                    {import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"}
-                  </span>
-                </div>
+              <div>
+                Backend:{" "}
+                <span className="text-emerald-700 dark:text-emerald-400">
+                  {import.meta.env.VITE_API_BASE_URL ||
+                    "http://localhost:3000/api"}
+                </span>
               </div>
             </div>
           </div>
+        </SidebarSection>
+      )}
+    </div>
+  );
+
+  return (
+    <AppShell>
+      <div className="flex gap-5">
+        {/* Desktop sidebar */}
+        <aside className="hidden lg:block w-[360px] shrink-0">
+          {SidebarContent}
         </aside>
+
+        {/* Mobile sidebar drawer */}
+        {sidebarOpen && (
+          <div className="lg:hidden fixed inset-0 z-50">
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <div className="absolute left-0 top-0 bottom-0 w-[92%] max-w-[420px] p-4 overflow-y-auto">
+              <div className="rounded-3xl border border-white/10 bg-slate-950/50 backdrop-blur p-2">
+                {SidebarContent}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main chat area */}
         <main
-          className="flex-1 flex flex-col rounded-3xl border border-slate-200/70 bg-white/70
-                     shadow-[0_18px_80px_-45px_rgba(2,6,23,0.55)]
-                     backdrop-blur
-                     dark:border-white/10 dark:bg-slate-950/40 overflow-hidden"
+          className="flex-1 flex flex-col rounded-[28px] border border-white/60 bg-white/70
+                     shadow-[0_18px_90px_-55px_rgba(2,6,23,0.65)]
+                     backdrop-blur dark:border-white/10 dark:bg-slate-950/40 overflow-hidden"
         >
-          <header className="px-4 py-3 border-b border-slate-200/70 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
-            <div className="max-w-3xl mx-auto flex items-center justify-between">
+          {/* Chat header */}
+          <header className="px-4 sm:px-6 py-4 border-b border-slate-200/70 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
+            <div className="max-w-4xl mx-auto flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm text-emerald-700 dark:text-emerald-300 font-semibold">
-                  {activeSession?.title || "Study Buddy"}
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {activeSession?.title || "Study Buddy"}
+                  </p>
+                  <Pill tone="emerald">Live</Pill>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Your buddy + your notes for this chat.
-                </div>
+                <p className="mt-1 text-[12px] text-slate-500 dark:text-slate-400">
+                  Ask questions • Upload notes per chat • Keep context clean
+                </p>
               </div>
-              <button
-                onClick={() => createNewSession()}
-                className="md:hidden text-xs rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-white"
-              >
-                + New chat
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="lg:hidden rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white px-3 py-2 text-xs font-semibold
+                             text-slate-700 dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 dark:text-slate-200 transition"
+                >
+                  Menu
+                </button>
+
+                <button
+                  onClick={() => createNewSession()}
+                  className="rounded-2xl bg-emerald-600 hover:bg-emerald-500 px-4 py-2 text-xs font-semibold text-white transition"
+                >
+                  + New chat
+                </button>
+              </div>
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-4">
-            <div className="max-w-3xl mx-auto">
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
+            <div className="max-w-4xl mx-auto">
               {messages.map(renderMessage)}
+
               {isSending && (
-                <div className="flex justify-start mb-3">
-                  <div className="bg-white/70 text-slate-700 border border-slate-200/70 rounded-2xl rounded-tl-sm px-4 py-2 text-xs flex items-center gap-2 backdrop-blur dark:bg-slate-950/40 dark:text-slate-200 dark:border-white/10">
+                <div className="flex justify-start mb-4">
+                  <div className="rounded-3xl rounded-tl-lg px-4 py-2 text-xs flex items-center gap-2
+                                  border border-slate-200/70 bg-white/70 text-slate-700 backdrop-blur
+                                  dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     Study Buddy is thinking…
                   </div>
                 </div>
               )}
+
               <div ref={bottomRef} />
             </div>
           </div>
 
+          {/* Composer */}
           <footer className="border-t border-slate-200/70 bg-white/60 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
             <form
               onSubmit={handleSend}
-              className="max-w-3xl mx-auto px-3 sm:px-6 py-3 flex items-end gap-2"
+              className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-end gap-2"
             >
-              <textarea
-                rows={1}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Tell me how you’re feeling or what you’re stuck on…"
-                className="flex-1 rounded-2xl bg-white/70 border border-slate-200 px-3 py-2 text-sm
-                           text-slate-900 placeholder:text-slate-400
-                           focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent resize-none
-                           dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-50 dark:placeholder:text-slate-500"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
+              <div className="flex-1">
+                <div className="relative">
+                  <textarea
+                    rows={1}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Type your question… (Enter = send, Shift+Enter = new line)"
+                    className="w-full rounded-[22px] bg-white/80 border border-slate-200 px-4 py-3 text-sm
+                               text-slate-900 placeholder:text-slate-400
+                               focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-transparent resize-none
+                               dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                  />
+
+                  {/* glow line */}
+                  <div className="pointer-events-none absolute inset-x-6 -bottom-2 h-6 bg-gradient-to-r from-transparent via-emerald-500/18 to-transparent blur-xl" />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Pill>Tip: upload notes for better answers</Pill>
+                  <Pill tone="indigo">Per-session memory</Pill>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={isSending || !input.trim() || !activeSessionId}
-                className="shrink-0 rounded-2xl bg-emerald-600 hover:bg-emerald-500
-                           disabled:opacity-60 disabled:cursor-not-allowed text-sm font-medium px-4 py-2 transition text-white"
+                className="shrink-0 rounded-[22px] bg-emerald-600 hover:bg-emerald-500
+                           disabled:opacity-60 disabled:cursor-not-allowed
+                           text-sm font-semibold px-5 py-3 transition text-white
+                           shadow-[0_14px_55px_-40px_rgba(16,185,129,0.9)]"
               >
                 {isSending ? "Sending…" : "Send"}
               </button>
