@@ -1,112 +1,127 @@
-# 🎓 EduMentor – AI-Powered Adaptive Learning Platform
+# EduMentor – AI-Powered Personalized Learning Platform (Final Year Project)
 
-## 📌 Project Overview
+EduMentor is a GenAI-based web platform designed to provide personalized academic support for university students.  
+It combines four connected learning modules in one unified system:
 
-EduMentor is an **AI-powered adaptive learning platform designed for university students**.  
-It integrates multiple intelligent components to deliver **personalized, engaging, and syllabus-aware learning support** using students’ own lecture materials and reference books.
-
-Unlike generic AI chatbots, EduMentor focuses on **how students learn**, adapting explanations, guidance, and revision strategies dynamically without manual tagging or syllabus configuration.
-
----
-
-## 🧠 Core Functional Components
-
-### 1️⃣ Peer-Like AI Study Buddy Agent
-
-- Acts as a friendly, casual peer rather than a teacher
-- Uses informal tone and relatable examples
-- Encourages students to ask questions without fear
-- Ideal for quick clarification and continuous engagement
-
-### 2️⃣ Multi-View Explanation Generator (MVEG)
-
-- Explains the same concept in multiple formats:
-  - Simple explanation
-  - Analogy-based explanation
-  - Code-based explanation
-  - Summary
-- Allows students to choose the explanation style they understand best
-- Supports different learning preferences
-
-### 3️⃣ Interactive Avatar Mentor (LLM-based Digital Twin)
-
-- A visual and voice-enabled AI mentor
-- Behaves like a real academic mentor:
-  - Provides guidance and motivation
-  - Helps with study planning
-  - Offers structured explanations
-- Uses an animated or 3D avatar interface for emotional engagement
-
-### 4️⃣ Adaptive Concept Reinforcement Engine (ACE)
-
-- Analyzes student interaction history automatically
-- Identifies weak concepts without manual tagging
-- Generates targeted:
-  - Quizzes
-  - Flashcards
-  - Revision sessions
-- Continuously adapts reinforcement strategies over time
+- **StudyBuddy Agent** – session-based chat assistant with lecture-note uploads (PDF/Text) and context-aware responses  
+- **Multi-View Explanation Generator (MVEG)** – generates explanations in multiple styles (Simple / Analogy / Code / Visual)  
+- **3D Avatar Tutor** – futuristic tutor interface to improve engagement (voice/visual tutor experience)  
+- **Adaptive Reinforcement Engine (ACE)** – generates adaptive quizzes/flashcards and tracks mastery/weak areas for retention
 
 ---
 
-## 🏗️ System Architecture
+## Team & Roles
 
-- **Frontend**
+| Member | Component / Responsibility |
+|-------|-----------------------------|
+| **[Arunod K. H. G. T]** | Common UI + integration + StudyBuddy Agent |
+| **[Denuwan A. S.]** | Multi-View Explanation Generator (MVEG) |
+| **[Nimesha M. G. S]** | 3D Avatar Tutor |
+| **[Nawarathna N. D. S.]** | Adaptive Reinforcement Engine (ACE) |
 
-  - Built using React and Tailwind CSS
-  - Provides UI for Study Buddy, Avatar Mentor, MVEG views, and dashboards
-  - Handles PDF uploads and user interactions
-
-- **Backend API**
-
-  - Manages authentication, user sessions, and interaction logs
-  - Routes requests to AI services and reinforcement logic
-  - Supports scalable microservice-style expansion
-
-- **AI & LLM Layer**
-
-  - Uses Hugging Face open-source models (free-tier)
-  - Limited use of API-based LLMs for enhanced responses
-  - Model-agnostic design allows easy switching
-
-- **Adaptive Reinforcement Engine (ACE)**
-
-  - Tracks learning behavior and performance
-  - Identifies weak areas dynamically
-  - Generates personalized reinforcement content
-
-- **Knowledge Sources**
-  - User-uploaded lecture notes (PDFs)
-  - Reference books
-  - Course-specific academic materials
+> Update names and roles exactly as your group assignment.
 
 ---
 
-## 🧩 Project Dependencies
+## Problem Statement
 
-### Frontend Dependencies
+Many students struggle with university-level content because most tools:
+- provide only one style of explanation,
+- do not align answers with lecture notes/syllabus,
+- do not track weak areas for retention,
+- and are not designed as a complete learning workflow.
 
-- **React** – User interface framework
-- **Vite** – Frontend build tool
-- **Tailwind CSS** – Styling and responsive design
-- **Axios / Fetch API** – API communication
-
-### Backend Dependencies
-
-- **Node.js + Express** or **Python (FastAPI / Flask)**
-- **MongoDB** – User data, interaction history, concept tracking
-
-### AI & Machine Learning
-
-- **Hugging Face Transformers**
-- **Open-source LLMs (free-tier models)**
-- **Embedding & Tokenization libraries**
-- **PDF parsing libraries** for lecture material extraction
-
-### Infrastructure & Deployment
-
-- **Docker-ready architecture**
-- **Cloud deployment support**
-- **Rate limiting & caching** for API token management
+EduMentor solves this by offering a unified system that supports:
+**understanding → multi-view explanation → guided tutoring → reinforcement practice**.
 
 ---
+
+## Key Features
+
+### Common Platform (All Modules)
+- Futuristic responsive UI (React + Tailwind)
+- Light/Dark mode
+- Unified navigation for all modules
+
+### StudyBuddy Agent
+- Chat sessions per lesson/topic (no mixing)
+- Upload **PDF notes** or **text notes** per session
+- Context-aware answers (RAG-ready flow)
+- Chat history saved per session
+
+### Multi-View Explanation Generator (MVEG)
+- Explanations in multiple views: Simple / Analogy / Code / Visual
+- Strict syllabus mode using lecture content
+
+### 3D Avatar Tutor
+- Avatar-based teaching interface
+- Supports interactive learning experience (future-ready design)
+
+### ACE Reinforcement Engine
+- Adaptive quizzes/flashcards
+- Weak area tracking and mastery improvement
+
+---
+
+## System Architecture
+
+### High-Level Architecture (MERN + Services)
+
+```mermaid
+flowchart LR
+  U[Student / User] -->|Web| FE[React + Vite + Tailwind Frontend]
+
+  FE -->|REST API| API[Node.js / Express API Gateway]
+  API -->|Auth/User/Session| DB[(MongoDB)]
+
+  API --> SB[StudyBuddy Service]
+  API --> MVEG[MVEG Service]
+  API --> ACE[ACE Service]
+  API --> AV[3D Avatar Tutor Service]
+
+  SB -->|Store sessions/messages| DB
+  SB -->|Upload PDF/Text| STORE[(File Storage / Uploads)]
+  SB -->|Chunk + Embed + Retrieve| RAG[RAG / Vector Store]
+
+  MVEG -->|Generate multi-view explanations| LLM[LLM / Model API]
+  ACE -->|Generate quizzes + mastery| LLM
+  AV -->|Tutor interactions| LLM
+```
+
+## Tech Stack
+
+### Frontend
+- **React (Vite)**
+- **Tailwind CSS**
+- **React Router**
+
+### Backend
+- **Node.js + Express**
+- **MongoDB (Mongoose)**
+- **REST APIs**
+
+### AI / GenAI Layer (Planned / In Progress)
+- **RAG pipeline** for lecture-note based answering  
+- **Embeddings + Vector Search** for retrieval  
+- **LLM** for response generation  
+
+
+## Project Dependencies
+
+### Frontend Dependencies (Typical)
+- `react`, `react-dom`
+- `react-router-dom`
+- `tailwindcss`, `postcss`, `autoprefixer`
+
+### Backend Dependencies (Typical)
+- `express`
+- `mongoose`
+- `cors`
+- `dotenv`
+- `multer` *(PDF uploads)*
+- `axios` *(service calls if needed)*
+
+### AI / RAG Dependencies (If used)
+- `langchain` *(or custom pipeline)*
+- `pdf-parse` / `pypdf` *(depending on implementation)*
+- Embeddings library + Vector DB *(FAISS / Pinecone / Chroma, etc.)*
