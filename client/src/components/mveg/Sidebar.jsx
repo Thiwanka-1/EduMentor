@@ -2,6 +2,31 @@ import React, { useMemo, useState } from "react";
 import { Plus, Search, Sparkles, LayoutGrid, BookOpen } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 
+/* =========================
+   Date helpers
+========================= */
+function isToday(date) {
+  const d = new Date(date);
+  const now = new Date();
+  return (
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear()
+  );
+}
+
+function isYesterday(date) {
+  const d = new Date(date);
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+
+  return (
+    d.getDate() === y.getDate() &&
+    d.getMonth() === y.getMonth() &&
+    d.getFullYear() === y.getFullYear()
+  );
+}
+
 export default function Sidebar({
   items,
   activeId,
@@ -15,33 +40,44 @@ export default function Sidebar({
 }) {
   const [q, setQ] = useState("");
 
-  const filtered = useMemo(() => {
+  /* =========================
+     Filter + Sort + Group
+  ========================= */
+  const grouped = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return items;
-    return items.filter((x) => {
-      const t = (x.title || "").toLowerCase();
-      const qu = (x.question || "").toLowerCase();
-      return t.includes(term) || qu.includes(term);
-    });
+
+    const filtered = term
+      ? items.filter((x) => {
+          const t = (x.title || "").toLowerCase();
+          const qu = (x.question || "").toLowerCase();
+          return t.includes(term) || qu.includes(term);
+        })
+      : items;
+
+    // newest first
+    const sorted = [...filtered].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    return {
+      today: sorted.filter((x) => isToday(x.createdAt)),
+      yesterday: sorted.filter((x) => isYesterday(x.createdAt)),
+      earlier: sorted.filter(
+        (x) => !isToday(x.createdAt) && !isYesterday(x.createdAt)
+      ),
+    };
   }, [items, q]);
 
   return (
     <aside
       className={[
-        // ✅ critical: full height + allow inner flex children to shrink
-        "h-full min-h-0 w-[300px] shrink-0 p-4 flex flex-col",
-
-        // ✅ spacing between blocks
-        "gap-4",
-
-        // ✅ divider + glass
+        "h-full min-h-0 w-[300px] shrink-0 p-4 flex flex-col gap-4",
         "border-r border-slate-200/70 dark:border-white/10",
         "bg-white/40 dark:bg-slate-950/40 backdrop-blur",
-
         drawer ? "w-full" : "",
       ].join(" ")}
     >
-      {/* Header */}
+      {/* ================= Header ================= */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="h-9 w-9 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 grid place-items-center font-bold">
           M
@@ -56,19 +92,21 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* New */}
+      {/* ================= New ================= */}
       <button
         onClick={onNew}
         className="h-11 rounded-2xl bg-slate-900 text-white hover:bg-slate-800
-                   dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition flex items-center justify-center gap-2 shrink-0"
+                   dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200
+                   transition flex items-center justify-center gap-2 shrink-0"
       >
         <Plus size={16} /> New Explanation
       </button>
 
-      {/* Search */}
+      {/* ================= Search ================= */}
       <div
-        className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-3 h-10
-                   dark:border-white/10 dark:bg-slate-950/40 shrink-0"
+        className="flex items-center gap-2 rounded-2xl border border-slate-200/70
+                   bg-white/70 px-3 h-10 shrink-0
+                   dark:border-white/10 dark:bg-slate-950/40"
       >
         <Search size={16} className="text-slate-500 dark:text-slate-400" />
         <input
@@ -79,7 +117,7 @@ export default function Sidebar({
         />
       </div>
 
-      {/* Nav */}
+      {/* ================= Nav ================= */}
       <div className="flex flex-col gap-1 shrink-0">
         <button
           onClick={() => go("/mveg/explain")}
@@ -118,37 +156,90 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* ✅ Scroll section MUST be flex-1 + min-h-0 */}
+      {/* ================= Library (scroll) ================= */}
       <div className="flex-1 min-h-0 flex flex-col mt-2">
         <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400 font-semibold mb-2 shrink-0">
           MY EXPLANATIONS
         </div>
 
-        {/* ✅ this will now reach the bottom and scroll */}
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
-          {filtered.map((it) => (
-            <SidebarItem
-              key={it._id}
-              item={it}
-              active={it._id === activeId}
-              onSelect={onSelect}
-              onDelete={onDelete}
-              onRename={onRename}
-            />
-          ))}
-
-          {!filtered.length && (
-            <div className="text-sm text-slate-500 dark:text-slate-400 py-10 text-center">
-              No explanations found.
-            </div>
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
+          {/* Today */}
+          {grouped.today.length > 0 && (
+            <Section title="Today">
+              {grouped.today.map((it) => (
+                <SidebarItem
+                  key={it._id}
+                  item={it}
+                  active={it._id === activeId}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                  onRename={onRename}
+                />
+              ))}
+            </Section>
           )}
+
+          {/* Yesterday */}
+          {grouped.yesterday.length > 0 && (
+            <Section title="Yesterday">
+              {grouped.yesterday.map((it) => (
+                <SidebarItem
+                  key={it._id}
+                  item={it}
+                  active={it._id === activeId}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                  onRename={onRename}
+                />
+              ))}
+            </Section>
+          )}
+
+          {/* Earlier */}
+          {grouped.earlier.length > 0 && (
+            <Section title="Earlier">
+              {grouped.earlier.map((it) => (
+                <SidebarItem
+                  key={it._id}
+                  item={it}
+                  active={it._id === activeId}
+                  onSelect={onSelect}
+                  onDelete={onDelete}
+                  onRename={onRename}
+                />
+              ))}
+            </Section>
+          )}
+
+          {/* Empty */}
+          {!grouped.today.length &&
+            !grouped.yesterday.length &&
+            !grouped.earlier.length && (
+              <div className="text-sm text-slate-500 dark:text-slate-400 py-10 text-center">
+                No explanations found.
+              </div>
+            )}
         </div>
       </div>
 
-      {/* Footer */}
+      {/* ================= Footer ================= */}
       <div className="text-xs text-slate-500 dark:text-slate-400 pt-2 shrink-0">
         EduMentor • MVEG Module
       </div>
     </aside>
+  );
+}
+
+/* =========================
+   Section helper
+========================= */
+function Section({ title, children }) {
+  return (
+    <div>
+      <div className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+        {title}
+      </div>
+      <div className="space-y-2">{children}</div>
+    </div>
   );
 }

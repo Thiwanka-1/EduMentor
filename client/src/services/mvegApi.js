@@ -61,21 +61,20 @@ export async function getExplanation(id, mode = "simple") {
 /* ----------------------------------
    GENERATE EXPLANATION
 -----------------------------------*/
-export async function generateExplanation({ message, mode }) {
+export async function generateExplanation({ message, mode, strict }) {
   try {
-    return await request("/api/explanations", {
+    return await request("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ message, mode }),
+      body: JSON.stringify({ message, mode, strict }),
     });
   } catch {
-    // 🔁 mock generation
-    const mock =
-      MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
-
-    return {
-      id: mock._id,
-      content: mock.answers[mode] || mock.answers.simple,
-    };
+    // // 🔁 mock generation
+    // const mock =
+    //   MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
+    // return {
+    //   id: mock._id,
+    //   content: mock.answers[mode] || mock.answers.simple,
+    // };
   }
 }
 
@@ -89,4 +88,14 @@ export async function deleteExplanation(id) {
     // silently succeed in prototype
     return { ok: true };
   }
+}
+
+/* ----------------------------------
+   RENAME EXPLANATION
+-----------------------------------*/
+export async function renameExplanation(id, title) {
+  return request(`/api/explanations/${id}/title`, {
+    method: "PATCH",
+    body: JSON.stringify({ title }),
+  });
 }

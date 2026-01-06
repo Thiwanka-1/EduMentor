@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import TutorMode from "./pages/TutorMode.jsx";
 import LessonMode from "./pages/LessonMode.jsx";
 
+import ChatPage from "./pages/StudyBuddy/ChatPage";
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
 import MvegExplain from "./pages/mveg/MvegExplain";
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/lesson" element={<LessonMode />} />
       
 
+      <Route path="/study-buddy" element={<ChatPage />} />
       <Route path="*" element={<NotFoundInline />} />
     </Routes>
   );
