@@ -456,6 +456,7 @@ export default function Home() {
             title="ACE Reinforcement"
             tag="Mastery"
             desc="Adaptive reinforcement sessions, quizzes, and mastery tracking for retention."
+            to="/ace"
           />
         </div>
       </section>

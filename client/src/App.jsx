@@ -11,6 +11,17 @@ import MvegExplain from "./pages/mveg/MvegExplain";
 import MvegLibrary from "./pages/mveg/MvegLibrary";
 import MvegTools from "./pages/mveg/MvegTools";
 
+// ACE pages
+import AceLayout from "./pages/ace/AceLayout";
+import AceDashboard from "./pages/ace/AceDashboard";
+import AceCreate from "./pages/ace/AceCreate";
+import AceAnalysis from "./pages/ace/AceAnalysis";
+import AceFlashcards from "./pages/ace/AceFlashcards";
+import AceSession from "./pages/ace/AceSession";
+import AceReinforce from "./pages/ace/AceReinforce";
+
+
+
 function NotFoundInline() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -48,6 +59,16 @@ export default function App() {
         <Route path="explain" element={<MvegExplain />} />
         <Route path="library" element={<MvegLibrary />} />
         <Route path="tools" element={<MvegTools />} />
+      </Route>
+
+      {/* ACE module */}
+      <Route path="/ace" element={<AceLayout />}>
+      <Route index element={<AceDashboard />} />
+      <Route path="create" element={<AceCreate />} />
+      <Route path="analysis" element={<AceAnalysis />} />
+      <Route path="flashcards" element={<AceFlashcards />} />
+      <Route path="session" element={<AceSession />} />
+      <Route path="reinforce" element={<AceReinforce />} />
       </Route>
 
       {/* Placeholder routes */}
