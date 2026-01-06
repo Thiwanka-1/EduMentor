@@ -66,7 +66,7 @@ export default function ExplanationCanvas({
           </div>
 
           {/* Source material */}
-          <div className="px-6 py-5 border-t border-slate-200/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
+          {/* <div className="px-6 py-5 border-t border-slate-200/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
             <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
               Source Material
             </div>
@@ -78,7 +78,7 @@ export default function ExplanationCanvas({
                 • (Coming next) Book chapter/page citations from RAG chunks
               </li>
             </ul>
-          </div>
+          </div> */}
         </div>
 
         {/* 🔧 FIX: Action bar now ABOVE dock */}
