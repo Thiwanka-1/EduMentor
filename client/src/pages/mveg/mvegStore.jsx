@@ -11,6 +11,7 @@ import {
   getExplanation,
   generateExplanation,
   listExplanations,
+  renameExplanation,
 } from "../../services/mvegApi";
 import { copyToClipboard } from "../../utils/mvegClipboard";
 import { instructionMap } from "../../components/mveg/ModeTabs";
@@ -23,6 +24,7 @@ export function MvegProvider({ children }) {
 
   const [input, setInput] = useState("");
   const [mode, setMode] = useState("simple");
+  const [strict, setStrict] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const [toast, setToast] = useState("");
@@ -79,10 +81,16 @@ export function MvegProvider({ children }) {
     }
   };
 
-  const onRename = (id, title) => {
-    setItems((prev) => prev.map((x) => (x._id === id ? { ...x, title } : x)));
-    if (active?._id === id) setActive((a) => ({ ...a, title }));
-    setToast("Renamed (local)");
+  const onRename = async (id, title) => {
+    try {
+      await renameExplanation(id, title);
+
+      setItems((prev) => prev.map((x) => (x._id === id ? { ...x, title } : x)));
+
+      setActive((a) => (a?._id === id ? { ...a, title } : a));
+    } catch {
+      setToast("Rename failed");
+    }
   };
 
   const onPickSample = (text) => setInput(text);
@@ -99,6 +107,7 @@ export function MvegProvider({ children }) {
           message: msg,
           instruction: instructionMap[mode],
           mode,
+          strict,
         });
 
         const newItem = {
@@ -121,7 +130,7 @@ export function MvegProvider({ children }) {
         setLoading(false);
       }
     },
-    [input, mode, loading]
+    [input, mode, strict, loading]
   );
 
   const onCopy = useCallback(async () => {
@@ -152,6 +161,8 @@ export function MvegProvider({ children }) {
       setInput,
       mode,
       setMode,
+      strict,
+      setStrict,
       loading,
       setLoading,
       toast,
