@@ -19,7 +19,6 @@ It combines four connected learning modules in one unified system:
 | **[Nimesha M. G. S]** | 3D Avatar Tutor |
 | **[Nawarathna N. D. S.]** | Adaptive Reinforcement Engine (ACE) |
 
-> Update names and roles exactly as your group assignment.
 
 ---
 
