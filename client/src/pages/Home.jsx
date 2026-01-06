@@ -280,6 +280,14 @@ export default function Home() {
                 </div>
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
                   Live UI preview
+                  <video
+              src="/demo.mp4"
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-auto object-cover"
+            />
                 </span>
               </div>
 
@@ -441,6 +449,7 @@ export default function Home() {
             title="3D Avatar Tutor"
             tag="Interactive"
             desc="A future-ready tutor interface for speech + expressions and better engagement."
+            to="/lesson"
           />
           <ModuleCard
             accent="emerald"
