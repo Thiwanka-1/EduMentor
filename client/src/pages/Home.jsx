@@ -424,6 +424,7 @@ export default function Home() {
             title="StudyBuddy Agent"
             tag="Guided Q&A"
             desc="Ask questions on your lecture content and get structured help and next steps."
+            to="/study-buddy"
           />
 
           {/* ✅ THIS ONE NAVIGATES */}
