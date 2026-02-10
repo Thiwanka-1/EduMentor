@@ -1,15 +1,54 @@
 import { Upload, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
 
 export default function AceCreate() {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  // ===== STATE =====
+  const [files, setFiles] = useState([]);
+  const [difficulty, setDifficulty] = useState("Medium");
+  const [questionCount, setQuestionCount] = useState(5);
+  const [questionTypes, setQuestionTypes] = useState({
+    mcq: true,
+    tf: false,
+    short: true,
+  });
+
+  // ===== HANDLERS =====
+  function handleBrowseClick() {
+    fileInputRef.current.click();
+  }
+
+  function handleFileChange(e) {
+    const selectedFiles = Array.from(e.target.files).map((f) => ({
+      name: f.name,
+      size: (f.size / 1024 / 1024).toFixed(2) + " MB",
+    }));
+    setFiles(selectedFiles);
+  }
+
+  function toggleQuestionType(type) {
+    setQuestionTypes((prev) => ({
+      ...prev,
+      [type]: !prev[type],
+    }));
+  }
+
+  function increaseCount() {
+    setQuestionCount((c) => Math.min(15, c + 1));
+  }
+
+  function decreaseCount() {
+    setQuestionCount((c) => Math.max(1, c - 1));
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* ================= LEFT ================= */}
       <div className="lg:col-span-2 space-y-6">
-        {/* Breadcrumb */}
-        <p className="text-sm text-slate-500 dark:text-slate-400">
+        <p className="text-sm text-slate-500">
           Dashboard / <span className="text-white">New Study Set</span>
         </p>
 
@@ -20,85 +59,64 @@ export default function AceCreate() {
           </span>
         </h1>
 
-        <p className="text-slate-500 dark:text-slate-400 max-w-xl">
-          Upload your course notes to generate AI-powered quizzes. Our engine
-          reinforces weak points automatically.
+        <p className="text-slate-400 max-w-xl">
+          Upload your course notes to generate AI-powered quizzes.
         </p>
 
-        {/* Upload Card */}
-        <div
-          className="rounded-3xl border border-white/10 bg-[#070b18]
-                     p-10 flex flex-col items-center justify-center text-center
-                     hover:border-indigo-500/40 transition"
-        >
-          <div className="w-14 h-14 rounded-full bg-indigo-600/20 flex items-center justify-center mb-4">
+        {/* Upload */}
+        <div className="rounded-3xl border border-white/10 bg-[#070b18]
+                        p-10 text-center hover:border-indigo-500/40 transition">
+          <div className="w-14 h-14 mx-auto rounded-full bg-indigo-600/20 flex items-center justify-center mb-4">
             <Upload className="w-6 h-6 text-indigo-400" />
           </div>
 
-          <h3 className="font-semibold mb-1">
-            Upload Source Material
-          </h3>
-
+          <h3 className="font-semibold mb-1">Upload Source Material</h3>
           <p className="text-sm text-slate-400 mb-5">
-            Drag & drop files here or click browse.
-            <br />
-            Supported: PDF, DOCX, PNG (Max 50MB)
+            PDF, DOCX, PNG (Max 50MB)
           </p>
 
           <button
-            className="px-5 py-2 rounded-xl bg-white text-black
-                       text-sm font-semibold hover:bg-slate-200 transition"
+            onClick={handleBrowseClick}
+            className="px-5 py-2 rounded-xl bg-white text-black text-sm font-semibold"
           >
             Browse Files
           </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx,.png"
+            className="hidden"
+            onChange={handleFileChange}
+          />
         </div>
 
-        {/* Uploaded files (fake data) */}
-        <div>
-          <p className="text-xs font-semibold tracking-widest text-slate-500 mb-3">
-            UPLOADED FILES (2)
-          </p>
+        {/* Uploaded Files */}
+        {files.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-slate-500 mb-3">
+              UPLOADED FILES ({files.length})
+            </p>
 
-          <div className="space-y-3">
-            {[
-              {
-                name: "Introduction_to_Neuroscience.pdf",
-                size: "4.2 MB",
-              },
-              {
-                name: "Lecture_Slides_Week3.png",
-                size: "1.8 MB",
-              },
-            ].map((f) => (
-              <div
-                key={f.name}
-                className="flex items-center justify-between
-                           rounded-xl border border-white/10 bg-[#070b18] p-4"
-              >
-                <div>
+            <div className="space-y-3">
+              {files.map((f) => (
+                <div
+                  key={f.name}
+                  className="rounded-xl border border-white/10 bg-[#070b18] p-4"
+                >
                   <p className="text-sm font-medium">{f.name}</p>
-                  <p className="text-xs text-slate-400">
-                    {f.size} • Ready for processing
-                  </p>
+                  <p className="text-xs text-slate-400">{f.size}</p>
                 </div>
-
-                <span className="text-xs text-emerald-400">
-                  ✔ Ready
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* ================= RIGHT ================= */}
       <div className="rounded-3xl border border-white/10 bg-[#070b18] p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Configuration</h3>
-          <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400">
-            AI Engine Ready
-          </span>
-        </div>
+        <h3 className="font-semibold">Configuration</h3>
 
         {/* Question Types */}
         <div>
@@ -107,18 +125,22 @@ export default function AceCreate() {
           </p>
 
           <ConfigOption
-            title="Multiple Choice"
+            title="MCQ"
             desc="Standard 4-option questions"
-            active
+            active={questionTypes.mcq}
+            onClick={() => toggleQuestionType("mcq")}
           />
           <ConfigOption
             title="True / False"
             desc="Quick concept validation"
+            active={questionTypes.tf}
+            onClick={() => toggleQuestionType("tf")}
           />
           <ConfigOption
             title="Short Answer"
-            desc="Fill in the blanks & definitions"
-            active
+            desc="Definitions & explanations"
+            active={questionTypes.short}
+            onClick={() => toggleQuestionType("short")}
           />
         </div>
 
@@ -129,12 +151,13 @@ export default function AceCreate() {
           </p>
 
           <div className="flex gap-2">
-            {["Easy", "Medium", "Hard"].map((d, i) => (
+            {["Easy", "Medium", "Hard"].map((d) => (
               <button
                 key={d}
+                onClick={() => setDifficulty(d)}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium
                   ${
-                    i === 1
+                    difficulty === d
                       ? "bg-indigo-600 text-white"
                       : "bg-white/5 text-slate-400 hover:text-white"
                   }`}
@@ -156,9 +179,19 @@ export default function AceCreate() {
             <span className="text-sm">Total Questions</span>
 
             <div className="flex items-center gap-3">
-              <button className="w-7 h-7 rounded-full bg-white/10">−</button>
-              <span className="font-semibold">20</span>
-              <button className="w-7 h-7 rounded-full bg-white/10">+</button>
+              <button
+                onClick={decreaseCount}
+                className="w-7 h-7 rounded-full bg-white/10"
+              >
+                −
+              </button>
+              <span className="font-semibold">{questionCount}</span>
+              <button
+                onClick={increaseCount}
+                className="w-7 h-7 rounded-full bg-white/10"
+              >
+                +
+              </button>
             </div>
           </div>
         </div>
@@ -174,21 +207,18 @@ export default function AceCreate() {
           <Sparkles className="w-4 h-4" />
           Generate Study Set
         </button>
-
-        <p className="text-[11px] text-slate-500 text-center">
-          Estimated processing time: ~45 seconds per file
-        </p>
       </div>
     </div>
   );
 }
 
-/* ================= SUB COMPONENT ================= */
+/* ================= COMPONENT ================= */
 
-function ConfigOption({ title, desc, active }) {
+function ConfigOption({ title, desc, active, onClick }) {
   return (
     <div
-      className={`rounded-xl border p-4 mb-2 cursor-pointer
+      onClick={onClick}
+      className={`rounded-xl border p-4 mb-2 cursor-pointer transition
         ${
           active
             ? "border-indigo-500/50 bg-indigo-600/10"

@@ -3,8 +3,9 @@ import {
   LayoutDashboard,
   HelpCircle,
   Layers,
+  TrendingUp,
   AlertTriangle,
-  BarChart3,
+  Home,
 } from "lucide-react";
 
 export default function AceSidebar() {
@@ -29,7 +30,7 @@ export default function AceSidebar() {
     },
     {
       label: "Analysis",
-      icon: <BarChart3 size={18} />,
+      icon: <TrendingUp size={18} />,
       to: "/ace/analysis",
     },
     {
@@ -40,23 +41,26 @@ export default function AceSidebar() {
   ];
 
   return (
-    <aside className="w-64 px-5 py-6 border-r border-black/5 dark:border-white/5
-                      bg-white dark:bg-[#070b18] flex flex-col">
+    <aside
+      className="w-64 px-5 py-6 flex flex-col
+                 bg-white dark:bg-[#070b18]
+                 border-r border-black/5 dark:border-white/5"
+    >
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />
         <div>
           <p className="font-semibold">ReinforceAI</p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Adaptive Engine  
+            Adaptive Engine 
           </p>
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* ACE Navigation */}
       <nav className="space-y-1 text-sm">
         {navItems.map((item) => {
-          const active =
+          const isActive =
             location.pathname === item.to ||
             (item.to !== "/ace" &&
               location.pathname.startsWith(item.to));
@@ -67,7 +71,7 @@ export default function AceSidebar() {
               onClick={() => navigate(item.to)}
               className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer
                 ${
-                  active
+                  isActive
                     ? "bg-indigo-600/15 text-indigo-500"
                     : "text-slate-500 hover:text-black dark:hover:text-white"
                 }`}
@@ -79,8 +83,22 @@ export default function AceSidebar() {
         })}
       </nav>
 
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Back to Home */}
+      <div
+        onClick={() => navigate("/")}
+        className="flex items-center gap-3 px-4 py-2 mb-4 rounded-lg cursor-pointer
+                   text-slate-500 hover:text-black dark:hover:text-white
+                   hover:bg-black/5 dark:hover:bg-white/5"
+      >
+        <Home size={18} />
+        Back to Home
+      </div>
+
       {/* User */}
-      <div className="mt-auto pt-6 border-t border-black/5 dark:border-white/5">
+      <div className="pt-4 border-t border-black/5 dark:border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-slate-500" />
           <div>
