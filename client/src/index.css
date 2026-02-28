@@ -1,21 +1,19 @@
-@import "tailwindcss"; /* v4 way */
+@import "tailwindcss";
+
 html,
 body,
 #root {
   height: 100%;
 }
 
-/* ✅ Default background so you never see white gaps */
 body {
   margin: 0;
-  background: rgb(2 6 23); /* slate-950 */
+  background: #f8fafc; /* slate-50 */
+  color: #0f172a; /* slate-900 */
+  font-family: ui-sans-serif, system-ui, sans-serif;
 }
-/* ✅ Used by your MVEG page padding-bottom */
+
+/* Bottom dock spacing */
 :root {
-  --bottom-dock: 92px;
-}
-@media (min-width: 640px) {
-  :root {
-    --bottom-dock: 96px;
-  }
+  --bottom-dock: 96px;
 }

@@ -13,26 +13,23 @@ export default function ExplanationCanvas({
   const navigate = useNavigate();
 
   return (
-    <div className="h-full flex flex-col px-6 py-6">
-      {/* 🔧 FIX: bottom padding equals dock height */}
+    <div className="h-full flex flex-col px-6 py-8 bg-slate-50">
       <div className="max-w-4xl w-full mx-auto pb-[120px]">
-        <div
-          className="rounded-3xl border border-slate-200/70 bg-white/70 backdrop-blur overflow-hidden
-                     dark:border-white/10 dark:bg-slate-950/40"
-        >
-          {/* Question */}
-          <div className="px-6 py-6 border-b border-slate-200/70 dark:border-white/10">
+        {/* Main Card */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          {/* Question Header */}
+          <div className="px-6 py-6 border-b border-slate-200 bg-slate-50">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-xs tracking-widest font-semibold text-slate-500 dark:text-slate-400">
+                <div className="text-xs tracking-widest font-semibold text-slate-500">
                   QUESTION
                 </div>
-                <h1 className="mt-2 text-3xl font-semibold text-slate-900 dark:text-white">
+                <h1 className="mt-2 text-3xl font-semibold text-slate-900 leading-snug">
                   {active?.question || "—"}
                 </h1>
               </div>
 
-              {/* 🎓 Avatar / Tutor Button */}
+              {/* Tutor Button */}
               <button
                 onClick={() =>
                   navigate("/tutor", {
@@ -42,9 +39,8 @@ export default function ExplanationCanvas({
                     },
                   })
                 }
-                className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-2xl
-                           bg-slate-900 text-white hover:bg-slate-800 transition
-                           dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+                className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl
+                           bg-slate-900 text-white hover:bg-slate-800 transition"
               >
                 <UserCircle2 size={18} />
                 Tutor
@@ -52,51 +48,32 @@ export default function ExplanationCanvas({
             </div>
           </div>
 
-          {/* Answer */}
-          <div className="px-6 py-6">
+          {/* Answer Section */}
+          <div className="px-6 py-6 text-slate-800">
             {loading ? (
               <div className="space-y-3 animate-pulse">
-                <div className="h-4 w-2/3 bg-slate-200 dark:bg-white/10 rounded" />
-                <div className="h-4 w-full bg-slate-200 dark:bg-white/10 rounded" />
-                <div className="h-4 w-5/6 bg-slate-200 dark:bg-white/10 rounded" />
+                <div className="h-4 w-2/3 bg-slate-200 rounded" />
+                <div className="h-4 w-full bg-slate-200 rounded" />
+                <div className="h-4 w-5/6 bg-slate-200 rounded" />
               </div>
             ) : (
               <MarkdownView text={active?.answer || ""} />
             )}
           </div>
-
-          {/* Source material */}
-          {/* <div className="px-6 py-5 border-t border-slate-200/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
-            <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
-              Source Material
-            </div>
-            <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
-              <li>
-                • (Coming next) Lecture slide references + page/slide numbers
-              </li>
-              <li>
-                • (Coming next) Book chapter/page citations from RAG chunks
-              </li>
-            </ul>
-          </div> */}
         </div>
 
-        {/* 🔧 FIX: Action bar now ABOVE dock */}
+        {/* Action Bar */}
         <div className="mt-6 flex items-center gap-3">
           <button
             onClick={onCopy}
-            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition
-                       flex items-center gap-2
-                       dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-white/5"
+            className="h-11 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 transition flex items-center gap-2 shadow-sm"
           >
             <Copy size={16} /> Copy
           </button>
 
           <button
             onClick={onExportPdf}
-            className="h-11 px-4 rounded-2xl border border-slate-200/70 bg-white/70 hover:bg-white transition
-                       flex items-center gap-2
-                       dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-white/5"
+            className="h-11 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 transition flex items-center gap-2 shadow-sm"
           >
             <FileDown size={16} /> Export PDF
           </button>
@@ -105,9 +82,7 @@ export default function ExplanationCanvas({
 
           <button
             onClick={onRegenerate}
-            className="h-11 px-4 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition
-                       flex items-center gap-2
-                       dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200"
+            className="h-11 px-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-2"
           >
             <RefreshCw size={16} /> Regenerate
           </button>

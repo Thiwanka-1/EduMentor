@@ -9,19 +9,16 @@ const MODES = [
 
 export default function ModeTabs({ mode, setMode }) {
   return (
-    <div
-      className="inline-flex rounded-2xl p-1 border border-slate-200/70 bg-white/70
-                    dark:border-white/10 dark:bg-slate-950/40"
-    >
+    <div className="inline-flex rounded-xl p-1 border border-slate-300 bg-white shadow-sm">
       {MODES.map((m) => (
         <button
           key={m.key}
           onClick={() => setMode(m.key)}
           className={[
-            "px-4 py-2 rounded-xl text-sm font-medium transition",
+            "px-4 py-2 rounded-lg text-sm font-medium transition",
             mode === m.key
-              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-              : "text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-white/10",
+              ? "bg-slate-900 text-white"
+              : "text-slate-700 hover:bg-slate-100",
           ].join(" ")}
         >
           {m.label}

@@ -4,12 +4,12 @@ import { extractKeyTerms } from "../../utils/mvegText";
 import { useMveg } from "../../pages/mveg/mvegStore";
 
 export default function StudyTools({ answerText, drawer = false }) {
-  const { strict, setStrict } = useMveg(); // ✅ GLOBAL
+  const { strict, setStrict } = useMveg();
   const [level, setLevel] = useState(55);
 
   const terms = useMemo(
     () => extractKeyTerms(answerText || "", 6),
-    [answerText]
+    [answerText],
   );
 
   const related = [
@@ -23,36 +23,29 @@ export default function StudyTools({ answerText, drawer = false }) {
   return (
     <aside
       className={[
-        // 🔧 FIX: height + flex rules
         "w-[340px] flex flex-col min-h-0",
-
-        // styling
-        "border-l border-slate-200/70 bg-white/60 backdrop-blur px-4 py-4",
-        "dark:border-white/10 dark:bg-slate-950/40",
-
+        "border-l border-slate-200 bg-white px-5 py-5",
         drawer ? "w-full border-l-0" : "",
       ].join(" ")}
     >
-      {/* Header (fixed) */}
-      <h3 className="text-xs tracking-widest font-semibold text-slate-500 dark:text-slate-400 mb-2">
+      {/* Header */}
+      <h3 className="text-xs tracking-widest font-semibold text-slate-500 mb-3">
         STUDY TOOLS
       </h3>
 
-      {/* 🔧 FIX: Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
-        {/* Strict syllabus */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
+      <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+        {/* Strict Syllabus */}
+        <Card>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-800">
               Strict Syllabus Only
             </p>
+
             <button
               onClick={() => setStrict(!strict)}
               className={[
                 "w-12 h-6 rounded-full transition relative",
-                strict
-                  ? "bg-slate-900 dark:bg-white"
-                  : "bg-slate-300 dark:bg-white/20",
+                strict ? "bg-slate-900" : "bg-slate-300",
               ].join(" ")}
             >
               <span
@@ -63,18 +56,19 @@ export default function StudyTools({ answerText, drawer = false }) {
               />
             </button>
           </div>
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-            When on, the AI prioritizes uploaded slides/books (RAG context).
+
+          <p className="mt-2 text-xs text-slate-600">
+            When enabled, explanations prioritize uploaded slides and textbooks.
           </p>
-        </div>
+        </Card>
 
         {/* Complexity */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
+        <Card>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-800">
               Complexity Level
             </p>
-            <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10">
+            <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
               Undergraduate
             </span>
           </div>
@@ -85,86 +79,98 @@ export default function StudyTools({ answerText, drawer = false }) {
             max="100"
             value={level}
             onChange={(e) => setLevel(Number(e.target.value))}
-            className="w-full mt-3"
+            className="w-full mt-3 accent-slate-900"
           />
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+
+          <div className="flex justify-between text-xs text-slate-500 mt-1">
             <span>Novice</span>
             <span>Expert</span>
           </div>
-        </div>
+        </Card>
 
         {/* Key Terms */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Key Terms
-          </p>
+        <Card>
+          <p className="text-sm font-semibold text-slate-800">Key Terms</p>
+
           <div className="mt-3 flex flex-wrap gap-2">
             {(terms.length ? terms : ["syllabus", "context", "concept"]).map(
               (t) => (
                 <span
                   key={t}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-200/70 bg-white/70 text-slate-700
-                             dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200"
+                  className="text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-100 text-slate-700"
                 >
                   #{t}
                 </span>
-              )
+              ),
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Quiz */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
+        <Card>
           <div className="flex items-center gap-2">
             <Sparkles size={16} />
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-800">
               Generate Quiz
             </p>
           </div>
-          <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
-            UI placeholder for now.
+
+          <p className="mt-2 text-xs text-slate-600">
+            Automatically create mastery questions from this explanation.
           </p>
-          <button className="mt-3 w-full h-10 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 flex items-center justify-center gap-2">
+
+          <button className="mt-3 w-full h-10 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-2">
             <Wand2 size={16} /> Generate
           </button>
-        </div>
+        </Card>
 
-        {/* Ask follow-up */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
+        {/* Ask Follow-up */}
+        <Card>
           <div className="flex items-center gap-2">
             <HelpCircle size={16} />
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-800">
               Ask Follow-up
             </p>
           </div>
+
           <div className="mt-3 flex gap-2">
             <input
-              className="flex-1 h-10 rounded-xl border border-slate-200/70 px-3 text-sm outline-none dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100"
+              className="flex-1 h-10 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:ring-2 focus:ring-slate-300"
               placeholder="Type a question…"
             />
-            <button className="h-10 px-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+            <button className="h-10 px-3 rounded-lg bg-slate-900 text-white">
               →
             </button>
           </div>
-        </div>
+        </Card>
 
         {/* Related */}
-        <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+        <Card>
+          <p className="text-sm font-semibold text-slate-800">
             Related Concepts
           </p>
+
           <div className="mt-2 space-y-2">
             {related.map((r) => (
               <div
                 key={r}
-                className="text-sm text-slate-700 dark:text-slate-200 hover:underline cursor-pointer"
+                className="text-sm text-slate-700 hover:underline cursor-pointer"
               >
                 {r}
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       </div>
     </aside>
+  );
+}
+
+/* Reusable Card */
+function Card({ children }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {children}
+    </div>
   );
 }

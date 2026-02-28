@@ -11,11 +11,8 @@ export default function Toast({ toast, clear }) {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div
-        className="rounded-xl border border-slate-200/70 bg-white/90 backdrop-blur px-4 py-2
-                      dark:border-white/10 dark:bg-slate-950/80"
-      >
-        <p className="text-sm text-slate-800 dark:text-slate-100">{toast}</p>
+      <div className="rounded-lg border border-slate-300 bg-white px-5 py-3 shadow-md">
+        <p className="text-sm text-slate-800 font-medium">{toast}</p>
       </div>
     </div>
   );
