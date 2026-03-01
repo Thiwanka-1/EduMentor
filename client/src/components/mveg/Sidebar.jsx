@@ -2,9 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Plus, Search, Sparkles, LayoutGrid, BookOpen } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 
-/* =========================
-   Date helpers
-========================= */
+/* Date helpers */
 function isToday(date) {
   const d = new Date(date);
   const now = new Date();
@@ -19,7 +17,6 @@ function isYesterday(date) {
   const d = new Date(date);
   const y = new Date();
   y.setDate(y.getDate() - 1);
-
   return (
     d.getDate() === y.getDate() &&
     d.getMonth() === y.getMonth() &&
@@ -40,9 +37,6 @@ export default function Sidebar({
 }) {
   const [q, setQ] = useState("");
 
-  /* =========================
-     Filter + Sort + Group
-  ========================= */
   const grouped = useMemo(() => {
     const term = q.trim().toLowerCase();
 
@@ -54,16 +48,15 @@ export default function Sidebar({
         })
       : items;
 
-    // newest first
     const sorted = [...filtered].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
 
     return {
       today: sorted.filter((x) => isToday(x.createdAt)),
       yesterday: sorted.filter((x) => isYesterday(x.createdAt)),
       earlier: sorted.filter(
-        (x) => !isToday(x.createdAt) && !isYesterday(x.createdAt)
+        (x) => !isToday(x.createdAt) && !isYesterday(x.createdAt),
       ),
     };
   }, [items, q]);
@@ -71,99 +64,70 @@ export default function Sidebar({
   return (
     <aside
       className={[
-        "h-full min-h-0 w-[300px] shrink-0 p-4 flex flex-col gap-4",
-        "border-r border-slate-200/70 dark:border-white/10",
-        "bg-white/40 dark:bg-slate-950/40 backdrop-blur",
+        "h-full min-h-0 w-[300px] shrink-0 p-5 flex flex-col gap-4",
+        "border-r border-slate-200 bg-white",
         drawer ? "w-full" : "",
       ].join(" ")}
     >
-      {/* ================= Header ================= */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="h-9 w-9 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 grid place-items-center font-bold">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-xl bg-slate-900 text-white grid place-items-center font-bold">
           M
         </div>
         <div>
-          <div className="text-sm font-bold text-slate-900 dark:text-white">
-            MVEG
-          </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            Multi-View Explanation
-          </div>
+          <div className="text-sm font-bold text-slate-900">MVEG</div>
+          <div className="text-xs text-slate-500">Multi-View Explanation</div>
         </div>
       </div>
 
-      {/* ================= New ================= */}
+      {/* New Button */}
       <button
         onClick={onNew}
-        className="h-11 rounded-2xl bg-slate-900 text-white hover:bg-slate-800
-                   dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200
-                   transition flex items-center justify-center gap-2 shrink-0"
+        className="h-11 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-2"
       >
         <Plus size={16} /> New Explanation
       </button>
 
-      {/* ================= Search ================= */}
-      <div
-        className="flex items-center gap-2 rounded-2xl border border-slate-200/70
-                   bg-white/70 px-3 h-10 shrink-0
-                   dark:border-white/10 dark:bg-slate-950/40"
-      >
-        <Search size={16} className="text-slate-500 dark:text-slate-400" />
+      {/* Search */}
+      <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 h-10">
+        <Search size={16} className="text-slate-500" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100"
+          className="flex-1 bg-transparent outline-none text-sm text-slate-800"
           placeholder="Search library…"
         />
       </div>
 
-      {/* ================= Nav ================= */}
-      <div className="flex flex-col gap-1 shrink-0">
-        <button
+      {/* Navigation */}
+      <div className="flex flex-col gap-1">
+        <NavButton
+          active={tab === "explain"}
           onClick={() => go("/mveg/explain")}
-          className={[
-            "h-10 rounded-2xl px-3 flex items-center gap-2 text-sm transition",
-            tab === "explain"
-              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-              : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200",
-          ].join(" ")}
-        >
-          <Sparkles size={16} /> Explain
-        </button>
-
-        <button
+          icon={<Sparkles size={16} />}
+          label="Explain"
+        />
+        <NavButton
+          active={tab === "library"}
           onClick={() => go("/mveg/library")}
-          className={[
-            "h-10 rounded-2xl px-3 flex items-center gap-2 text-sm transition",
-            tab === "library"
-              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-              : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200",
-          ].join(" ")}
-        >
-          <LayoutGrid size={16} /> Library
-        </button>
-
-        <button
+          icon={<LayoutGrid size={16} />}
+          label="Library"
+        />
+        <NavButton
+          active={tab === "tools"}
           onClick={() => go("/mveg/tools")}
-          className={[
-            "h-10 rounded-2xl px-3 flex items-center gap-2 text-sm transition",
-            tab === "tools"
-              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-              : "hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200",
-          ].join(" ")}
-        >
-          <BookOpen size={16} /> Tools
-        </button>
+          icon={<BookOpen size={16} />}
+          label="Tools"
+        />
       </div>
 
-      {/* ================= Library (scroll) ================= */}
+      {/* Library Scroll */}
       <div className="flex-1 min-h-0 flex flex-col mt-2">
-        <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400 font-semibold mb-2 shrink-0">
+        <div className="text-xs tracking-widest text-slate-500 font-semibold mb-2">
           MY EXPLANATIONS
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-4">
-          {/* Today */}
+        <div className="flex-1 overflow-y-auto pr-1 space-y-4">
           {grouped.today.length > 0 && (
             <Section title="Today">
               {grouped.today.map((it) => (
@@ -179,7 +143,6 @@ export default function Sidebar({
             </Section>
           )}
 
-          {/* Yesterday */}
           {grouped.yesterday.length > 0 && (
             <Section title="Yesterday">
               {grouped.yesterday.map((it) => (
@@ -195,7 +158,6 @@ export default function Sidebar({
             </Section>
           )}
 
-          {/* Earlier */}
           {grouped.earlier.length > 0 && (
             <Section title="Earlier">
               {grouped.earlier.map((it) => (
@@ -211,28 +173,41 @@ export default function Sidebar({
             </Section>
           )}
 
-          {/* Empty */}
           {!grouped.today.length &&
             !grouped.yesterday.length &&
             !grouped.earlier.length && (
-              <div className="text-sm text-slate-500 dark:text-slate-400 py-10 text-center">
+              <div className="text-sm text-slate-500 py-10 text-center">
                 No explanations found.
               </div>
             )}
         </div>
       </div>
 
-      {/* ================= Footer ================= */}
-      <div className="text-xs text-slate-500 dark:text-slate-400 pt-2 shrink-0">
-        EduMentor • MVEG Module
-      </div>
+      {/* Footer */}
+      <div className="text-xs text-slate-500 pt-2">EduMentor • MVEG Module</div>
     </aside>
   );
 }
 
-/* =========================
-   Section helper
-========================= */
+/* Navigation Button */
+function NavButton({ active, onClick, icon, label }) {
+  return (
+    <button
+      onClick={onClick}
+      className={[
+        "h-10 rounded-xl px-3 flex items-center gap-2 text-sm transition",
+        active
+          ? "bg-slate-900 text-white"
+          : "hover:bg-slate-100 text-slate-700",
+      ].join(" ")}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+/* Section */
 function Section({ title, children }) {
   return (
     <div>

@@ -45,8 +45,7 @@ function InnerLayout() {
   }, [tab, active]);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      {/* 🔧 FIX: min-h-0 added */}
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="h-screen flex min-h-0">
         {/* Desktop left sidebar */}
         <div className="hidden lg:flex min-h-0">
@@ -69,7 +68,6 @@ function InnerLayout() {
         </div>
 
         {/* Main column */}
-        {/* 🔧 FIX: min-h-0 added */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar
             breadcrumb={breadcrumb}
@@ -78,38 +76,30 @@ function InnerLayout() {
             onGoHome={() => nav("/")}
           />
 
-          {/* 🔧 FIX: min-h-0 added */}
           <div className="flex-1 flex min-w-0 min-h-0">
             {/* Center column */}
-            {/* 🔧 FIX: min-h-0 added */}
             <div className="flex-1 min-w-0 min-h-0 relative">
-              {/* Scrollable content area */}
-              {/* 🔧 FIX: overflow + min-h-0 */}
+              {/* Scrollable content */}
               <div className="h-full min-h-0 overflow-y-auto pb-[96px]">
                 <Outlet />
               </div>
 
-              {/* Fixed bottom dock */}
-              <div className="absolute left-0 right-0 bottom-0 border-t border-slate-200/70 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-slate-950/55">
+              {/* Bottom input dock */}
+              <div className="absolute left-0 right-0 bottom-0 border-t border-slate-200 bg-white shadow-sm">
                 <form
                   onSubmit={onSubmit}
-                  className="max-w-4xl mx-auto px-3 sm:px-4 py-4"
+                  className="max-w-4xl mx-auto px-4 py-4"
                 >
-                  <div
-                    className="rounded-3xl border border-slate-200/70 bg-white/70 p-3 flex items-center gap-3
-                               dark:border-white/10 dark:bg-slate-950/40"
-                  >
+                  <div className="rounded-2xl border border-slate-300 bg-white p-3 flex items-center gap-3 shadow-sm">
                     <input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      className="flex-1 h-12 rounded-2xl bg-white border border-slate-200/70 px-4 text-sm outline-none
-                                 dark:bg-slate-950/40 dark:border-white/10 dark:text-slate-100"
+                      className="flex-1 h-12 rounded-xl bg-white border border-slate-300 px-4 text-sm outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition"
                       placeholder="Ask a concept… (Press Enter to generate)"
                     />
                     <button
                       disabled={loading}
-                      className="h-12 px-5 sm:px-6 rounded-2xl bg-slate-900 text-white hover:bg-slate-800
-                                 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition disabled:opacity-60"
+                      className="h-12 px-6 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition disabled:opacity-60"
                     >
                       {loading ? "Generating..." : "Generate"}
                     </button>

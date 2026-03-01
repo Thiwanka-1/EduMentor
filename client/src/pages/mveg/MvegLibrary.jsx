@@ -44,17 +44,12 @@ function Card({ item, onOpen, onDelete, onRename }) {
 
   return (
     <div
-      className="group relative rounded-3xl border border-slate-200/70 bg-white/70 p-5
-                 hover:shadow-[0_18px_70px_-55px_rgba(2,6,23,0.7)]
-                 transition backdrop-blur cursor-pointer
-                 dark:border-white/10 dark:bg-slate-950/40"
+      className="group relative rounded-2xl border border-slate-200 bg-white p-5 shadow-sm
+                 hover:shadow-md transition cursor-pointer"
       onClick={() => onOpen(item)}
     >
       {/* Mode */}
-      <span
-        className="inline-block mb-2 text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600
-                       dark:bg-white/10 dark:text-slate-200"
-      >
+      <span className="inline-block mb-2 text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-600">
         {item.mode || "simple"}
       </span>
 
@@ -73,23 +68,22 @@ function Card({ item, onOpen, onDelete, onRename }) {
             }
           }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full text-base font-semibold rounded-xl px-2 py-1
-                     border border-slate-200/70 outline-none
-                     dark:border-white/10 dark:bg-slate-950/40 dark:text-white"
+          className="w-full text-base font-semibold rounded-lg px-2 py-1
+                     border border-slate-300 outline-none focus:ring-2 focus:ring-slate-400"
         />
       ) : (
-        <div className="text-base font-semibold text-slate-900 dark:text-white line-clamp-2">
+        <div className="text-base font-semibold text-slate-900 line-clamp-2">
           {item.title || item.question}
         </div>
       )}
 
       {/* Preview */}
-      <div className="mt-2 text-sm text-slate-600 dark:text-slate-300 line-clamp-2">
+      <div className="mt-2 text-sm text-slate-600 line-clamp-2">
         {item.answer || ""}
       </div>
 
       {/* Date */}
-      <div className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+      <div className="mt-3 text-xs text-slate-500">
         {new Date(item.createdAt).toLocaleString()}
       </div>
 
@@ -99,16 +93,14 @@ function Card({ item, onOpen, onDelete, onRename }) {
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          className="h-8 w-8 grid place-items-center rounded-xl
-                     hover:bg-slate-200/60 dark:hover:bg-white/10"
+          className="h-8 w-8 grid place-items-center rounded-lg hover:bg-slate-100 transition"
           onClick={() => setEditing(true)}
         >
-          <Pencil size={15} />
+          <Pencil size={15} className="text-slate-600" />
         </button>
 
         <button
-          className="h-8 w-8 grid place-items-center rounded-xl
-                     hover:bg-rose-200/60 dark:hover:bg-rose-500/10"
+          className="h-8 w-8 grid place-items-center rounded-lg hover:bg-rose-100 transition"
           onClick={() => onDelete(item._id)}
         >
           <Trash2 size={15} className="text-rose-600" />
@@ -126,11 +118,10 @@ export default function MvegLibrary() {
   const { items, onSelect, onDelete, onRename } = useMveg();
   const [query, setQuery] = useState("");
 
-  /* Filter + sort */
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
     const base = [...items].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
 
     if (!q) return base;
@@ -138,20 +129,19 @@ export default function MvegLibrary() {
     return base.filter(
       (x) =>
         (x.title || "").toLowerCase().includes(q) ||
-        (x.question || "").toLowerCase().includes(q)
+        (x.question || "").toLowerCase().includes(q),
     );
   }, [items, query]);
 
-  /* Group */
   const groups = useMemo(
     () => ({
       Today: filteredItems.filter((x) => isToday(x.createdAt)),
       Yesterday: filteredItems.filter((x) => isYesterday(x.createdAt)),
       Earlier: filteredItems.filter(
-        (x) => !isToday(x.createdAt) && !isYesterday(x.createdAt)
+        (x) => !isToday(x.createdAt) && !isYesterday(x.createdAt),
       ),
     }),
-    [filteredItems]
+    [filteredItems],
   );
 
   const onOpen = async (it) => {
@@ -160,28 +150,23 @@ export default function MvegLibrary() {
   };
 
   return (
-    <section className="h-full overflow-y-auto px-6 py-6">
+    <section className="h-full overflow-y-auto px-6 py-8 bg-slate-50">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">
-          Library
-        </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">
+        <h1 className="text-2xl font-semibold text-slate-900">Library</h1>
+        <p className="text-sm text-slate-600 mt-1">
           Manage and review your generated study materials.
         </p>
 
-        {/* 🔍 Search */}
-        <div className="mt-4 max-w-md">
-          <div
-            className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/70 px-3 h-11
-                          dark:border-white/10 dark:bg-slate-950/40"
-          >
+        {/* Search */}
+        <div className="mt-5 max-w-md">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 h-11 shadow-sm">
             <Search size={16} className="text-slate-500" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search explanations…"
-              className="flex-1 bg-transparent outline-none text-sm dark:text-white"
+              className="flex-1 bg-transparent outline-none text-sm"
             />
           </div>
         </div>
@@ -192,18 +177,15 @@ export default function MvegLibrary() {
             arr.length > 0 && (
               <div key={label} className="mt-10">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  <h2 className="text-sm font-semibold text-slate-700">
                     {label}
                   </h2>
-                  <span
-                    className="text-xs px-2 py-1 rounded-lg border border-slate-200/70
-                                   dark:border-white/10 text-slate-500"
-                  >
+                  <span className="text-xs px-2 py-1 rounded-lg border border-slate-200 text-slate-500">
                     {arr.length}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {arr.map((it) => (
                     <Card
                       key={it._id}
@@ -215,11 +197,11 @@ export default function MvegLibrary() {
                   ))}
                 </div>
               </div>
-            )
+            ),
         )}
 
         {!filteredItems.length && (
-          <div className="mt-20 text-center text-slate-500 dark:text-slate-400">
+          <div className="mt-20 text-center text-slate-500">
             No matching explanations found.
           </div>
         )}
