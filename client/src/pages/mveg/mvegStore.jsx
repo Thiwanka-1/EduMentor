@@ -18,6 +18,26 @@ import { instructionMap } from "../../components/mveg/ModeTabs";
 
 const MvegCtx = createContext(null);
 
+const VIEW_KEYS = ["simple", "analogy", "code", "summary"];
+
+function normalizeViews(views = {}) {
+  return {
+    simple: views?.simple || "",
+    analogy: views?.analogy || "",
+    code: views?.code || "",
+    summary: views?.summary || "",
+  };
+}
+
+function hasAllViews(item) {
+  return !!(
+    item?.views &&
+    VIEW_KEYS.every(
+      (k) => typeof item.views[k] === "string" && item.views[k].length > 0,
+    )
+  );
+}
+
 export function MvegProvider({ children }) {
   const [items, setItems] = useState([]);
   const [active, setActive] = useState(null);
@@ -33,7 +53,9 @@ export function MvegProvider({ children }) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
-  // load library once
+  /* =========================
+     Load library once
+  ========================= */
   useEffect(() => {
     (async () => {
       try {
@@ -45,6 +67,32 @@ export function MvegProvider({ children }) {
     })();
   }, []);
 
+  /* =========================
+     ✅ Instant tab switching without re-generation
+     When mode changes and active has views, replace active.answer from cache
+  ========================= */
+  useEffect(() => {
+    if (!active?.views) return;
+
+    const nextAnswer =
+      active.views?.[mode] ||
+      active.views?.[active.mode] ||
+      active.views?.simple ||
+      active.answer ||
+      "";
+
+    if (nextAnswer && nextAnswer !== active.answer) {
+      setActive((prev) =>
+        prev
+          ? {
+              ...prev,
+              answer: nextAnswer,
+            }
+          : prev,
+      );
+    }
+  }, [mode, active]);
+
   const onNew = () => {
     setActive(null);
     setInput("");
@@ -54,15 +102,30 @@ export function MvegProvider({ children }) {
 
   const onSelect = async (item) => {
     let picked = item;
-    if (!item.answer) {
+
+    // if no answer OR no views, fetch full doc
+    if (!item?.answer || !item?.views) {
       try {
-        picked = await getExplanation(item._id);
+        picked = await getExplanation(item._id, item.mode || "simple");
       } catch {
         picked = item;
       }
     }
-    setActive(picked);
-    setMode(picked.mode || "simple"); // ✅ auto-set mode from saved item
+
+    // ensure answer matches selected mode when views exist
+    const initialMode = picked.mode || "simple";
+    const finalPicked = {
+      ...picked,
+      views: picked.views ? normalizeViews(picked.views) : picked.views,
+      answer:
+        (picked.views && (picked.views[initialMode] || picked.views.simple)) ||
+        picked.answer ||
+        "",
+      mode: initialMode,
+    };
+
+    setActive(finalPicked);
+    setMode(initialMode); // auto-tab select based on saved item
     setLeftOpen(false);
   };
 
@@ -86,7 +149,6 @@ export function MvegProvider({ children }) {
       await renameExplanation(id, title);
 
       setItems((prev) => prev.map((x) => (x._id === id ? { ...x, title } : x)));
-
       setActive((a) => (a?._id === id ? { ...a, title } : a));
     } catch {
       setToast("Rename failed");
@@ -103,24 +165,39 @@ export function MvegProvider({ children }) {
 
       setLoading(true);
       try {
-        const { content, id } = await generateExplanation({
+        const res = await generateExplanation({
           message: msg,
-          instruction: instructionMap[mode],
+          instruction: instructionMap[mode], // harmless if backend ignores
           mode,
           strict,
         });
 
+        const selectedMode = res.mode || mode || "simple";
+        const views = res.views ? normalizeViews(res.views) : null;
+
+        const selectedAnswer =
+          (views && (views[selectedMode] || views.simple)) ||
+          res.content ||
+          res.answer ||
+          "";
+
         const newItem = {
-          _id: id,
-          question: msg,
-          title: msg.split(" ").slice(0, 6).join(" "),
-          mode,
-          answer: content,
-          createdAt: new Date().toISOString(),
+          _id: res.id,
+          question: res.question || msg,
+          title: res.title || msg.split(" ").slice(0, 6).join(" "),
+          mode: selectedMode,
+          views, // ✅ all views cached
+          answer: selectedAnswer, // current displayed view
+          strict,
+          createdAt: res.createdAt || new Date().toISOString(),
         };
 
         setItems((prev) => [newItem, ...prev]);
         setActive(newItem);
+
+        // keep tab on selected mode used for generation
+        setMode(selectedMode);
+
         setInput("");
         setToast("Generated");
       } catch (err) {
@@ -130,7 +207,7 @@ export function MvegProvider({ children }) {
         setLoading(false);
       }
     },
-    [input, mode, strict, loading]
+    [input, mode, strict, loading],
   );
 
   const onCopy = useCallback(async () => {
@@ -181,19 +258,23 @@ export function MvegProvider({ children }) {
       onCopy,
       onExportPdf,
       onRegenerate,
+
+      // optional helper for future use
+      hasActiveAllViews: hasAllViews(active),
     }),
     [
       items,
       active,
       input,
       mode,
+      strict,
       loading,
       toast,
       leftOpen,
       rightOpen,
       onSubmit,
       onCopy,
-    ]
+    ],
   );
 
   return <MvegCtx.Provider value={value}>{children}</MvegCtx.Provider>;

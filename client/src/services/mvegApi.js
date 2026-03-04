@@ -1,4 +1,4 @@
-// src/services/api.js
+// src/services/mvegApi.js
 import { MOCK_EXPLANATIONS } from "./mockMveg";
 
 const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -21,19 +21,44 @@ async function request(path, options = {}) {
   return res.json();
 }
 
+// helper: normalize item shape for old/new backend + mock
+function normalizeExplanation(item) {
+  if (!item) return item;
+
+  const views = item.views || null;
+  const mode = item.mode || "simple";
+
+  return {
+    ...item,
+    mode,
+    views,
+    // keep backward compatibility
+    answer: item.answer || (views ? views[mode] || views.simple || "" : ""),
+  };
+}
+
 /* ----------------------------------
    LIST EXPLANATIONS
 -----------------------------------*/
 export async function listExplanations() {
   try {
-    return await request("/api/explanations");
+    const data = await request("/api/explanations");
+    return Array.isArray(data) ? data.map(normalizeExplanation) : [];
   } catch {
-    // 🔁 fallback
+    // fallback mock
     return MOCK_EXPLANATIONS.map((x) => ({
       _id: x._id,
       question: x.question,
       title: x.title,
+      mode: x.mode || "simple",
       createdAt: x.createdAt,
+      views: {
+        simple: x.answers?.simple || "",
+        analogy: x.answers?.analogy || "",
+        code: x.answers?.code || "",
+        summary: x.answers?.summary || "",
+      },
+      answer: x.answers?.[x.mode || "simple"] || x.answers?.simple || "",
     }));
   }
 }
@@ -43,38 +68,71 @@ export async function listExplanations() {
 -----------------------------------*/
 export async function getExplanation(id, mode = "simple") {
   try {
-    return await request(`/api/explanations/${id}`);
+    const item = await request(`/api/explanations/${id}`);
+    return normalizeExplanation(item);
   } catch {
     const mock = MOCK_EXPLANATIONS.find((x) => x._id === id);
     if (!mock) throw new Error("Not found");
+
+    const views = {
+      simple: mock.answers?.simple || "",
+      analogy: mock.answers?.analogy || "",
+      code: mock.answers?.code || "",
+      summary: mock.answers?.summary || "",
+    };
 
     return {
       _id: mock._id,
       question: mock.question,
       title: mock.title,
-      answer: mock.answers[mode] || mock.answers.simple,
       mode,
+      views,
+      answer: views[mode] || views.simple || "",
+      createdAt: mock.createdAt,
     };
   }
 }
 
 /* ----------------------------------
-   GENERATE EXPLANATION
+   GENERATE EXPLANATION (single call -> all views)
 -----------------------------------*/
 export async function generateExplanation({ message, mode, strict }) {
   try {
-    return await request("/api/chat", {
+    const res = await request("/api/chat", {
       method: "POST",
       body: JSON.stringify({ message, mode, strict }),
     });
+
+    // backend now returns { id, mode, content, views, ... }
+    return {
+      ...res,
+      mode: res.mode || mode || "simple",
+      views: res.views || null,
+      content: res.content || res.answer || "",
+      answer: res.answer || res.content || "",
+    };
   } catch {
-    // // 🔁 mock generation
-    // const mock =
-    //   MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
-    // return {
-    //   id: mock._id,
-    //   content: mock.answers[mode] || mock.answers.simple,
-    // };
+    // optional mock generation fallback
+    const mock =
+      MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
+
+    const views = {
+      simple: mock?.answers?.simple || "",
+      analogy: mock?.answers?.analogy || "",
+      code: mock?.answers?.code || "",
+      summary: mock?.answers?.summary || "",
+    };
+
+    return {
+      id: mock?._id || crypto.randomUUID?.() || String(Date.now()),
+      mode: mode || "simple",
+      content: views[mode] || views.simple || "",
+      answer: views[mode] || views.simple || "",
+      views,
+      question: message,
+      title: message.split(" ").slice(0, 6).join(" "),
+      createdAt: new Date().toISOString(),
+    };
   }
 }
 
@@ -85,7 +143,6 @@ export async function deleteExplanation(id) {
   try {
     return await request(`/api/explanations/${id}`, { method: "DELETE" });
   } catch {
-    // silently succeed in prototype
     return { ok: true };
   }
 }
