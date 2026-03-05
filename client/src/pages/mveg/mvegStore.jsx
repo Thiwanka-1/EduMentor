@@ -69,7 +69,7 @@ export function MvegProvider({ children }) {
 
   /* =========================
      ✅ Instant tab switching without re-generation
-     When mode changes and active has views, replace active.answer from cache
+     When mode changes and active has cached views, update active.answer
   ========================= */
   useEffect(() => {
     if (!active?.views) return;
@@ -103,7 +103,7 @@ export function MvegProvider({ children }) {
   const onSelect = async (item) => {
     let picked = item;
 
-    // if no answer OR no views, fetch full doc
+    // If no answer OR no views (old record/list payload), fetch full doc
     if (!item?.answer || !item?.views) {
       try {
         picked = await getExplanation(item._id, item.mode || "simple");
@@ -112,20 +112,22 @@ export function MvegProvider({ children }) {
       }
     }
 
-    // ensure answer matches selected mode when views exist
     const initialMode = picked.mode || "simple";
+    const normalizedViews = picked.views ? normalizeViews(picked.views) : null;
+
     const finalPicked = {
       ...picked,
-      views: picked.views ? normalizeViews(picked.views) : picked.views,
+      views: normalizedViews,
       answer:
-        (picked.views && (picked.views[initialMode] || picked.views.simple)) ||
+        (normalizedViews &&
+          (normalizedViews[initialMode] || normalizedViews.simple)) ||
         picked.answer ||
         "",
       mode: initialMode,
     };
 
     setActive(finalPicked);
-    setMode(initialMode); // auto-tab select based on saved item
+    setMode(initialMode); // auto-set active tab from saved item
     setLeftOpen(false);
   };
 
@@ -167,10 +169,29 @@ export function MvegProvider({ children }) {
       try {
         const res = await generateExplanation({
           message: msg,
-          instruction: instructionMap[mode], // harmless if backend ignores
+          instruction: instructionMap[mode], // backend can ignore this
           mode,
           strict,
         });
+
+        // ✅ Out-of-scope handling (do NOT save in history)
+        if (res?.outOfScope) {
+          setActive({
+            _id: null,
+            question: res.question || msg,
+            title: res.title || "Out of scope request",
+            mode: mode || "simple",
+            views: res.views ? normalizeViews(res.views) : null,
+            answer: res.content || res.answer || "",
+            createdAt: res.createdAt || new Date().toISOString(),
+            outOfScope: true,
+            outOfScopePayload: res.outOfScopePayload || null,
+          });
+
+          setMode(mode || "simple");
+          setToast("Please ask a CS/SE/IT academic question");
+          return;
+        }
 
         const selectedMode = res.mode || mode || "simple";
         const views = res.views ? normalizeViews(res.views) : null;
@@ -187,15 +208,17 @@ export function MvegProvider({ children }) {
           title: res.title || msg.split(" ").slice(0, 6).join(" "),
           mode: selectedMode,
           views, // ✅ all views cached
-          answer: selectedAnswer, // current displayed view
+          answer: selectedAnswer, // currently displayed selected view
           strict,
           createdAt: res.createdAt || new Date().toISOString(),
+          outOfScope: false,
         };
 
+        // Add to library/history only for valid academic generations
         setItems((prev) => [newItem, ...prev]);
         setActive(newItem);
 
-        // keep tab on selected mode used for generation
+        // Keep selected tab
         setMode(selectedMode);
 
         setInput("");
@@ -259,8 +282,9 @@ export function MvegProvider({ children }) {
       onExportPdf,
       onRegenerate,
 
-      // optional helper for future use
+      // optional helpers (useful for PP2 UI badges/indicators)
       hasActiveAllViews: hasAllViews(active),
+      isOutOfScopeActive: !!active?.outOfScope,
     }),
     [
       items,
