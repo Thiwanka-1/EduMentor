@@ -1,6 +1,7 @@
 import { Upload, Layers } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import useTheme from "../../hooks/useTheme";
+import useAuth from "../../hooks/useAuth";
 
 import AceSidebar from "../../components/ace/AceSidebar";
 import { StatCard } from "../../components/ace/StatCard";
@@ -10,8 +11,12 @@ import { WeakPoint } from "../../components/ace/WeakPoint";
 export default function AceDashboard() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const loading = false; // fake loading flag
+
+  // Get first name
+  const firstName = user?.name?.split(" ")[0] || "Student";
 
   return (
     <div className="flex min-h-screen bg-slate-100 dark:bg-[#050812]
@@ -25,10 +30,10 @@ export default function AceDashboard() {
           <div>
             <h1 className="text-3xl font-semibold">
               Welcome back,{" "}
-              <span className="text-indigo-500">Alex</span>
+              <span className="text-indigo-500">{firstName}</span>
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              🔥 You’re on a 5-day streak. Keep the momentum going.
+              🔥 You're on a {user?.streak || 0}-day streak. Keep the momentum going.
             </p>
           </div>
 
@@ -98,7 +103,7 @@ export default function AceDashboard() {
           >
             <p className="font-semibold mb-3">Recent Files</p>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Demo data only. Backend integration coming next.
+              Your uploaded materials will appear here.
             </p>
           </div>
 

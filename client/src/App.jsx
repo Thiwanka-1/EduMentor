@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
 
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
@@ -16,8 +17,10 @@ import AceAnalysis from "./pages/ace/AceAnalysis";
 import AceFlashcards from "./pages/ace/AceFlashcards";
 import AceSession from "./pages/ace/AceSession";
 import AceReinforce from "./pages/ace/AceReinforce";
+import ReviewQuiz from "./pages/ace/ReviewQuiz";
 
-
+// Auth
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function NotFoundInline() {
   return (
@@ -30,7 +33,7 @@ function NotFoundInline() {
           Page not found
         </h1>
         <p className="mt-3 text-slate-600 dark:text-slate-300">
-          The page you’re looking for doesn’t exist (yet).
+          The page you're looking for doesn't exist (yet).
         </p>
         <a
           href="/"
@@ -49,6 +52,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
 
       {/* ✅ MVEG module */}
       <Route path="/mveg" element={<MvegLayout />}>
@@ -58,14 +62,22 @@ export default function App() {
         <Route path="tools" element={<MvegTools />} />
       </Route>
 
-      {/* ACE module */}
-      <Route path="/ace" element={<AceLayout />}>
-      <Route index element={<AceDashboard />} />
-      <Route path="create" element={<AceCreate />} />
-      <Route path="analysis" element={<AceAnalysis />} />
-      <Route path="flashcards" element={<AceFlashcards />} />
-      <Route path="session" element={<AceSession />} />
-      <Route path="reinforce" element={<AceReinforce />} />
+      {/* ACE module — Protected: requires login */}
+      <Route
+        path="/ace"
+        element={
+          <ProtectedRoute>
+            <AceLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AceDashboard />} />
+        <Route path="create" element={<AceCreate />} />
+        <Route path="analysis" element={<AceAnalysis />} />
+        <Route path="flashcards" element={<AceFlashcards />} />
+        <Route path="session" element={<AceSession />} />
+        <Route path="reinforce" element={<AceReinforce />} />
+        <Route path="history" element={<ReviewQuiz />} />
       </Route>
 
       {/* Placeholder routes */}

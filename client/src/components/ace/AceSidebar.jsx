@@ -5,11 +5,15 @@ import {
   Layers,
   AlertTriangle,
   BarChart3,
+  History,
+  LogOut,
 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 
 export default function AceSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   const navItems = [
     {
@@ -37,18 +41,40 @@ export default function AceSidebar() {
       icon: <AlertTriangle size={18} />,
       to: "/ace/reinforce",
     },
+    {
+      label: "Quiz History",
+      icon: <History size={18} />,
+      to: "/ace/history",
+    },
   ];
 
+  function handleLogout() {
+    logout();
+    navigate("/login");
+  }
+
+  // Get initials for avatar
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
+
   return (
-    <aside className="w-64 px-5 py-6 border-r border-black/5 dark:border-white/5
-                      bg-white dark:bg-[#070b18] flex flex-col">
+    <aside
+      className="w-64 px-5 py-6 border-r border-black/5 dark:border-white/5
+                      bg-white dark:bg-[#070b18] flex flex-col"
+    >
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />
         <div>
           <p className="font-semibold">ReinforceAI</p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Adaptive Engine  
+            Adaptive Engine
           </p>
         </div>
       </div>
@@ -58,8 +84,7 @@ export default function AceSidebar() {
         {navItems.map((item) => {
           const active =
             location.pathname === item.to ||
-            (item.to !== "/ace" &&
-              location.pathname.startsWith(item.to));
+            (item.to !== "/ace" && location.pathname.startsWith(item.to));
 
           return (
             <div
@@ -82,13 +107,27 @@ export default function AceSidebar() {
       {/* User */}
       <div className="mt-auto pt-6 border-t border-black/5 dark:border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-slate-500" />
-          <div>
-            <p className="text-sm font-medium">Alex Chen</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Pro Plan
+          <div
+            className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500
+                        flex items-center justify-center text-white text-xs font-bold"
+          >
+            {initials}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
+              {user?.name || "User"}
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {user?.email || ""}
             </p>
           </div>
+          <button
+            onClick={handleLogout}
+            title="Sign out"
+            className="text-slate-400 hover:text-red-400 transition shrink-0"
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

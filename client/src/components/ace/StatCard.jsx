@@ -1,7 +1,7 @@
 export function StatCard({ title, value, sub, percent, loading }) {
   if (loading) {
     return (
-      <div className="rounded-2xl p-5 border border-white/5 bg-white/70 dark:bg-[#070b18]">
+      <div className="rounded-2xl p-5 border border-black/5 dark:border-white/5 bg-white/70 dark:bg-[#070b18]">
         <Skeleton className="h-4 w-24 mb-4" />
         <Skeleton className="h-8 w-16" />
         <Skeleton className="h-2 w-full mt-4" />
@@ -10,7 +10,7 @@ export function StatCard({ title, value, sub, percent, loading }) {
   }
 
   return (
-    <div className="rounded-2xl p-5 border border-white/5 bg-white/70 dark:bg-[#070b18]">
+    <div className="rounded-2xl p-5 border border-black/5 dark:border-white/5 bg-white/70 dark:bg-[#070b18]">
       <p className="text-xs text-slate-500 dark:text-slate-400">{title}</p>
       <div className="flex items-end gap-2 mt-1">
         <p className="text-3xl font-semibold">{value}</p>

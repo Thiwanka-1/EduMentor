@@ -1,29 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-const STORAGE_KEY = "edumentor_theme";
-
-function useTheme() {
-  const getInitial = () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark") return saved;
-    const prefersDark = window.matchMedia?.(
-      "(prefers-color-scheme: dark)"
-    )?.matches;
-    return prefersDark ? "dark" : "light";
-  };
-
-  const [theme, setTheme] = useState(getInitial);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
-
-  return { theme, setTheme };
-}
+import useTheme from "./../hooks/useTheme";
+import useAuth from "./../hooks/useAuth";
 
 function Icon({ children, className = "" }) {
   return (
@@ -115,6 +94,8 @@ function ModuleCard({ title, desc, tag, accent = "indigo", to }) {
 
 export default function Home() {
   const { theme, setTheme } = useTheme();
+  const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
   const year = useMemo(() => new Date().getFullYear(), []);
 
   return (
@@ -169,14 +150,24 @@ export default function Home() {
             </nav>
 
             <div className="flex items-center gap-2">
-              <a
-                href="#modules"
-                className="hidden sm:inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold
-                           bg-slate-900 text-white hover:bg-slate-800
-                           dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition"
-              >
-                Explore
-              </a>
+              {isLoggedIn ? (
+                <button
+                  onClick={() => navigate("/ace")}
+                  className="hidden sm:inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold
+                             bg-gradient-to-r from-indigo-500 to-cyan-500 text-white hover:opacity-90 transition"
+                >
+                  Dashboard →
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/login")}
+                  className="hidden sm:inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold
+                             bg-slate-900 text-white hover:bg-slate-800
+                             dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition"
+                >
+                  Sign In
+                </button>
+              )}
 
               <button
                 type="button"

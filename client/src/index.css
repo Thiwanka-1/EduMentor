@@ -1,4 +1,5 @@
 @import "tailwindcss"; /* v4 way */
+@custom-variant dark (&:where(.dark, .dark *));
 html,
 body,
 #root {
@@ -8,7 +9,6 @@ body,
 /* ✅ Default background so you never see white gaps */
 body {
   margin: 0;
-  background: rgb(2 6 23); /* slate-950 */
 }
 /* ✅ Used by your MVEG page padding-bottom */
 :root {

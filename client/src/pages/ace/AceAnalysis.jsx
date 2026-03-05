@@ -30,7 +30,7 @@ export default function AceAnalysis() {
                 ${
                   i === 1
                     ? "bg-indigo-600 text-white"
-                    : "bg-white/5 text-slate-400 hover:text-white"
+                    : "bg-black/5 dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
             >
               {t}
@@ -64,7 +64,7 @@ export default function AceAnalysis() {
       {/* ================= MIDDLE ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
-        <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-[#070b18] p-6">
+        <div className="lg:col-span-2 rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="font-semibold">Performance Over Time</h3>
@@ -96,7 +96,7 @@ export default function AceAnalysis() {
         </div>
 
         {/* Critical Weak Points */}
-        <div className="rounded-3xl border border-white/10 bg-[#070b18] p-6">
+        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="text-red-400" size={18} />
             <h3 className="font-semibold">Critical Weak Points</h3>
@@ -108,7 +108,7 @@ export default function AceAnalysis() {
           <Weak label="Fluid Dynamics" value={62} />
 
           <button className="w-full mt-5 py-2 rounded-xl
-                             bg-white/5 hover:bg-white/10
+                             bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10
                              text-sm font-semibold">
             View All Topics
           </button>
@@ -118,7 +118,7 @@ export default function AceAnalysis() {
       {/* ================= BOTTOM ================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recommendation */}
-        <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-[#070b18] p-6">
+        <div className="lg:col-span-2 rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
           <span className="text-xs px-2 py-1 rounded-full
                            bg-indigo-600/15 text-indigo-400">
             Recommended Action
@@ -130,11 +130,11 @@ export default function AceAnalysis() {
 
           <p className="text-slate-400 mt-2 max-w-xl">
             We’ve generated a targeted session with 20 questions focusing on
-            <span className="text-white font-medium">
+            <span className="text-slate-900 dark:text-white font-medium">
               {" "}Organic Chemistry{" "}
             </span>
             and
-            <span className="text-white font-medium">
+            <span className="text-slate-900 dark:text-white font-medium">
               {" "}Thermodynamics
             </span>.
           </p>
@@ -145,17 +145,17 @@ export default function AceAnalysis() {
             className="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold">
               ▶ Start Session
             </button>
-            <button className="text-sm text-slate-400 hover:text-white">
+            <button className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
               Customize
             </button>
           </div>
         </div>
 
         {/* Topic Mastery */}
-        <div className="rounded-3xl border border-white/10 bg-[#070b18] p-6">
+        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-semibold">Topic Mastery</h3>
-            <button className="text-xs text-slate-400 hover:text-white">
+            <button className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
               Details
             </button>
           </div>
@@ -185,7 +185,7 @@ export default function AceAnalysis() {
 
 function StatCard({ title, value, sub, icon }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-[#070b18] p-6">
+    <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
       <div className="flex justify-between items-start">
         <p className="text-xs text-slate-400">{title}</p>
         <div className="w-8 h-8 rounded-lg bg-indigo-600/20
@@ -211,7 +211,7 @@ function Weak({ label, value }) {
         <span>{label}</span>
         <span className="text-red-400">{value}%</span>
       </div>
-      <div className="h-1.5 bg-white/10 rounded-full">
+      <div className="h-1.5 bg-black/10 dark:bg-white/10 rounded-full">
         <div
           className="h-full bg-red-500"
           style={{ width: `${value}%` }}
@@ -225,14 +225,14 @@ function Topic({ icon, label, value }) {
   return (
     <div className="mb-4">
       <div className="flex items-center gap-3 mb-1">
-        <div className="w-8 h-8 rounded-lg bg-white/5
+        <div className="w-8 h-8 rounded-lg bg-black/5 dark:bg-white/5
                         flex items-center justify-center text-indigo-400">
           {icon}
         </div>
         <span className="text-sm">{label}</span>
         <span className="ml-auto text-sm">{value}%</span>
       </div>
-      <div className="h-1.5 bg-white/10 rounded-full">
+      <div className="h-1.5 bg-black/10 dark:bg-white/10 rounded-full">
         <div
           className="h-full bg-indigo-500"
           style={{ width: `${value}%` }}
