@@ -1,12 +1,26 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
+import TutorMode from "./pages/TutorMode.jsx";
+import LessonMode from "./pages/LessonMode.jsx";
 
+import ChatPage from "./pages/StudyBuddy/ChatPage";
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
 import MvegExplain from "./pages/mveg/MvegExplain";
 import MvegLibrary from "./pages/mveg/MvegLibrary";
 //import MvegTools from "./pages/mveg/MvegTools";
+
+// ACE pages
+import AceLayout from "./pages/ace/AceLayout";
+import AceDashboard from "./pages/ace/AceDashboard";
+import AceCreate from "./pages/ace/AceCreate";
+import AceAnalysis from "./pages/ace/AceAnalysis";
+import AceFlashcards from "./pages/ace/AceFlashcards";
+import AceSession from "./pages/ace/AceSession";
+import AceReinforce from "./pages/ace/AceReinforce";
+
+
 
 function NotFoundInline() {
   return (
@@ -46,10 +60,24 @@ export default function App() {
         <Route path="library" element={<MvegLibrary />} />
       </Route>
 
+      {/* ACE module */}
+      <Route path="/ace" element={<AceLayout />}>
+      <Route index element={<AceDashboard />} />
+      <Route path="create" element={<AceCreate />} />
+      <Route path="analysis" element={<AceAnalysis />} />
+      <Route path="flashcards" element={<AceFlashcards />} />
+      <Route path="session" element={<AceSession />} />
+      <Route path="reinforce" element={<AceReinforce />} />
+      </Route>
+
       {/* Placeholder routes */}
       <Route path="/about" element={<Navigate to="/" replace />} />
       <Route path="/contact" element={<Navigate to="/" replace />} />
+      <Route path="/tutor" element={<TutorMode />} />
+        <Route path="/lesson" element={<LessonMode />} />
+      
 
+      <Route path="/study-buddy" element={<ChatPage />} />
       <Route path="*" element={<NotFoundInline />} />
     </Routes>
   );
