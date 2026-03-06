@@ -113,12 +113,6 @@ export default function Sidebar({
           icon={<LayoutGrid size={16} />}
           label="Library"
         />
-        <NavButton
-          active={tab === "tools"}
-          onClick={() => go("/mveg/tools")}
-          icon={<BookOpen size={16} />}
-          label="Tools"
-        />
       </div>
 
       {/* Library Scroll */}
