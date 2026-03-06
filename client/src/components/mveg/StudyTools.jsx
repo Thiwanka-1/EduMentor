@@ -3,9 +3,27 @@ import { Sparkles, Wand2 } from "lucide-react";
 import { useMveg } from "../../pages/mveg/mvegStore";
 import { getRelatedConcepts } from "../../services/mvegApi";
 
+const MODULES = ["ALL", "AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
+
+function complexityLabel(level = 55) {
+  if (level <= 30) return "Novice";
+  if (level <= 70) return "Undergraduate";
+  return "Advanced";
+}
+
 export default function StudyTools({ answerText, drawer = false }) {
-  const { strict, setStrict, active, setInput } = useMveg();
-  const [level, setLevel] = useState(55);
+  const {
+    strict,
+    setStrict,
+    active,
+    setInput,
+
+    // ✅ new global controls
+    module,
+    setModule,
+    complexity,
+    setComplexity,
+  } = useMveg();
 
   const [related, setRelated] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
@@ -47,6 +65,8 @@ export default function StudyTools({ answerText, drawer = false }) {
       : ["Generate an explanation to see related topics."];
   }, [loadingRelated, related, active?._id]);
 
+  const label = complexityLabel(complexity);
+
   return (
     <aside
       className={[
@@ -85,18 +105,47 @@ export default function StudyTools({ answerText, drawer = false }) {
           </div>
 
           <p className="mt-2 text-xs text-slate-600">
-            When enabled, explanations prioritize uploaded slides and textbooks.
+            When enabled, answers are generated ONLY from your uploaded lecture
+            materials (RAG retrieval).
           </p>
+
+          {/* ✅ Module dropdown only active when strict ON */}
+          <div className="mt-4">
+            <label className="text-xs font-semibold text-slate-600">
+              Active Module
+            </label>
+            <select
+              value={module}
+              onChange={(e) => setModule(e.target.value)}
+              disabled={!strict}
+              className={[
+                "mt-2 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm bg-white",
+                strict ? "text-slate-800" : "text-slate-400 bg-slate-50",
+              ].join(" ")}
+            >
+              {MODULES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            {!strict && (
+              <p className="mt-2 text-xs text-slate-500">
+                Enable Strict Syllabus to filter retrieval by module.
+              </p>
+            )}
+          </div>
         </Card>
 
-        {/* Complexity */}
+        {/* ✅ Complexity */}
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-800">
               Complexity Level
             </p>
             <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-              Undergraduate
+              {label}
             </span>
           </div>
 
@@ -104,18 +153,22 @@ export default function StudyTools({ answerText, drawer = false }) {
             type="range"
             min="0"
             max="100"
-            value={level}
-            onChange={(e) => setLevel(Number(e.target.value))}
+            value={complexity}
+            onChange={(e) => setComplexity(Number(e.target.value))}
             className="w-full mt-3 accent-slate-900"
           />
 
           <div className="flex justify-between text-xs text-slate-500 mt-1">
             <span>Novice</span>
-            <span>Expert</span>
+            <span>Advanced</span>
           </div>
+
+          <p className="mt-2 text-xs text-slate-600">
+            Controls explanation depth (used in both Normal + Strict mode).
+          </p>
         </Card>
 
-        {/* Quiz */}
+        {/* Quiz (placeholder) */}
         <Card>
           <div className="flex items-center gap-2">
             <Sparkles size={16} />
@@ -150,10 +203,7 @@ export default function StudyTools({ answerText, drawer = false }) {
                   r.includes("No related") ||
                   r.includes("Generate")
                 }
-                onClick={() => {
-                  // ✅ UX: click a related topic -> put it into input box
-                  setInput(r);
-                }}
+                onClick={() => setInput(r)}
                 className={[
                   "w-full text-left text-sm rounded-lg px-3 py-2 transition",
                   loadingRelated || !active?._id

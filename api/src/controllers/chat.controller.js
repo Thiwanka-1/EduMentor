@@ -33,8 +33,40 @@ function normalizeMode(mode) {
   return ALL_MODES.includes(mode) ? mode : "simple";
 }
 
+/* =========================
+   Complexity helpers
+========================= */
+function complexityLabel(level = 55) {
+  const n = Number(level);
+  if (Number.isNaN(n)) return "Undergraduate";
+  if (n <= 30) return "Novice";
+  if (n <= 70) return "Undergraduate";
+  return "Advanced";
+}
+
+function complexityRules(label) {
+  if (label === "Novice") {
+    return `- Use very simple wording
+- Avoid heavy jargon
+- Give 1 small example
+- Keep answers short and clear`;
+  }
+  if (label === "Advanced") {
+    return `- Use deeper technical detail
+- Include edge cases and formal terms
+- Include 1–2 concise examples
+- Use structured headings`;
+  }
+  return `- Balanced explanation
+- Include key terms
+- Include 1 example
+- Keep it exam-friendly`;
+}
+
+/* =========================
+   Scope classifier fallback
+========================= */
 async function classifyAcademicScopeWithLLM(message) {
-  // short cheap classifier call for ambiguous cases only
   try {
     const completion = await client.chat.completions.create({
       model: process.env.HF_MODEL,
@@ -42,21 +74,24 @@ async function classifyAcademicScopeWithLLM(message) {
         {
           role: "system",
           content: `
-You are a strict query classifier for an academic learning system.
+You are a strict query classifier for an academic learning system (MVEG).
+
+Scope allowed:
+- Computer Science
+- Software Engineering
+- Information Technology academic topics only
 
 Classify the user query into ONE label only:
-- ACADEMIC_CS_IT (Computer Science / Software Engineering / Information Technology academic topic)
-- ACADEMIC_NON_CS (academic but outside CS/SE/IT scope)
-- NON_ACADEMIC (general life, entertainment, unrelated topic)
+- ACADEMIC_CS_IT
+- ACADEMIC_NON_CS
+- NON_ACADEMIC
 
 Rules:
+- General object comparisons (fruits/foods/daily life) are NON_ACADEMIC
 - Return ONLY the label, no explanation.
           `.trim(),
         },
-        {
-          role: "user",
-          content: message,
-        },
+        { role: "user", content: message },
       ],
       max_tokens: 10,
       temperature: 0,
@@ -74,18 +109,34 @@ Rules:
       return label;
     }
 
-    return "NON_ACADEMIC"; // safe fallback
+    return "NON_ACADEMIC";
   } catch (e) {
     console.error("LLM scope classifier failed:", e.message);
-    return "NON_ACADEMIC"; // safe fallback
+    return "NON_ACADEMIC";
   }
 }
 
-async function buildBasePrompt({ message, strict }) {
+/* =========================
+   Build base prompt (strict/non-strict)
+   ✅ now uses module + complexity
+========================= */
+async function buildBasePrompt({
+  message,
+  strict,
+  module = "ALL",
+  complexity = 55,
+}) {
+  const level = complexityLabel(complexity);
+  const rules = complexityRules(level);
+
   if (!strict) {
     return {
       systemBase: `
 You are an explanation generator for university students focused on CS/SE/IT academic topics.
+
+COMPLEXITY LEVEL: ${level}
+RULES:
+${rules}
 
 Follow the requested explanation style strictly.
 Do not introduce yourself.
@@ -95,25 +146,27 @@ Keep the answer academically useful, clear, and syllabus-friendly.
     };
   }
 
+  // ✅ STRICT MODE -> module-wise retrieval
   const retrievalRes = await fetch("http://localhost:8001/retrieve", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: message,
-      top_k: 3,
+      top_k: 5,
+      module: module || "ALL",
     }),
   });
 
-  if (!retrievalRes.ok) {
-    throw new Error("Retrieval failed");
-  }
+  if (!retrievalRes.ok) throw new Error("Retrieval failed");
 
   const chunks = await retrievalRes.json();
 
   const context = (Array.isArray(chunks) ? chunks : [])
-    .map(
-      (c, i) => `Source ${i + 1} (${c.source || "unknown"}):\n${c.text || ""}`,
-    )
+    .map((c, i) => {
+      const src = c.source || "unknown";
+      const pg = c.page ? `, page ${c.page}` : "";
+      return `Source ${i + 1} (${src}${pg}):\n${c.text || ""}`;
+    })
     .join("\n\n");
 
   return {
@@ -124,9 +177,13 @@ STRICT RULES:
 - Use ONLY the provided context
 - Do NOT add outside knowledge
 - Do NOT introduce yourself
-- If the answer is not supported by context, say so briefly
-- Follow the explanation style carefully
-- Stay within academic/syllabus content
+- If the answer is not supported by context, say: "Not found in provided materials."
+- Stay within syllabus content
+- Cite sources like (source: file, page n) when possible
+
+COMPLEXITY LEVEL: ${level}
+RULES:
+${rules}
 
 CONTEXT:
 ${context || "(No context available)"}
@@ -135,6 +192,9 @@ ${context || "(No context available)"}
   };
 }
 
+/* =========================
+   Generate view
+========================= */
 async function generateForMode({ message, strict, mode, basePrompt }) {
   const styleInstruction = MODE_INSTRUCTIONS[mode] || MODE_INSTRUCTIONS.simple;
 
@@ -162,9 +222,18 @@ ${styleInstruction}`,
   return (completion?.choices?.[0]?.message?.content || "").trim();
 }
 
+/* =========================
+   Main Handler
+========================= */
 export async function generateAndSave(req, res) {
   try {
-    const { message, mode = "simple", strict = false } = req.body;
+    const {
+      message,
+      mode = "simple",
+      strict = false,
+      module = "ALL",
+      complexity = 55,
+    } = req.body;
 
     if (!message || !String(message).trim()) {
       return res.status(400).json({ error: "Message required" });
@@ -173,35 +242,26 @@ export async function generateAndSave(req, res) {
     const cleanMessage = String(message).trim();
     const selectedMode = normalizeMode(mode);
 
-    /* ==================================================
-       ✅ 1) DOMAIN GUARD (Rule-based first)
-       ================================================== */
+    // ✅ Domain guard
     const ruleCheck = evaluateAcademicScope(cleanMessage);
-
     let allowed = ruleCheck.allowed;
 
-    // Ambiguous => use LLM classifier fallback
     if (allowed === null) {
       const label = await classifyAcademicScopeWithLLM(cleanMessage);
       allowed = label === "ACADEMIC_CS_IT";
     }
 
     if (!allowed) {
-      // Friendly out-of-scope response (UX-focused)
       const payload = buildOutOfScopeMessage(cleanMessage);
 
-      // We do NOT save out-of-scope requests in explanations collection
       return res.status(200).json({
         id: null,
         mode: selectedMode,
-        content: `### Out of MVEG Academic Scope\n\n${payload.message}\n\n**Try asking something like:**\n- ${payload.examples.join("\n- ")}`,
-        answer: `Out of scope`,
-        views: {
-          simple: "",
-          analogy: "",
-          code: "",
-          summary: "",
-        },
+        content: `### Out of MVEG Academic Scope\n\n${payload.message}\n\n**Try asking something like:**\n- ${payload.examples.join(
+          "\n- ",
+        )}`,
+        answer: "Out of scope",
+        views: { simple: "", analogy: "", code: "", summary: "" },
         outOfScope: true,
         outOfScopePayload: payload,
         question: cleanMessage,
@@ -210,17 +270,15 @@ export async function generateAndSave(req, res) {
       });
     }
 
-    /* ==================================================
-       ✅ 2) BUILD PROMPT BASE ONCE (RAG / non-RAG)
-       ================================================== */
+    // ✅ Build prompt base with strict + module + complexity
     const basePrompt = await buildBasePrompt({
       message: cleanMessage,
       strict: Boolean(strict),
+      module,
+      complexity,
     });
 
-    /* ==================================================
-       ✅ 3) GENERATE SELECTED VIEW FIRST
-       ================================================== */
+    // ✅ Generate selected view first
     const selectedAnswer = await generateForMode({
       message: cleanMessage,
       strict: Boolean(strict),
@@ -228,11 +286,8 @@ export async function generateAndSave(req, res) {
       basePrompt,
     });
 
-    /* ==================================================
-       ✅ 4) GENERATE REMAINING VIEWS
-       ================================================== */
+    // ✅ Generate other views
     const remainingModes = ALL_MODES.filter((m) => m !== selectedMode);
-
     const remainingResults = await Promise.all(
       remainingModes.map(async (m) => {
         const content = await generateForMode({
@@ -257,9 +312,7 @@ export async function generateAndSave(req, res) {
       views[m] = content;
     }
 
-    /* ==================================================
-       ✅ 5) SAVE ONE DOCUMENT WITH ALL VIEWS
-       ================================================== */
+    // ✅ Save one document with all views
     const doc = await Explanation.create({
       question: cleanMessage,
       title: generateTitle(cleanMessage),
@@ -280,6 +333,8 @@ export async function generateAndSave(req, res) {
       question: cleanMessage,
       title: doc.title,
       createdAt: doc.createdAt,
+      module,
+      complexity,
     });
   } catch (err) {
     console.error("Chat error:", err);

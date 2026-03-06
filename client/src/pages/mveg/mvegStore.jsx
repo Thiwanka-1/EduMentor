@@ -44,18 +44,22 @@ export function MvegProvider({ children }) {
 
   const [input, setInput] = useState("");
   const [mode, setMode] = useState("simple");
-  const [strict, setStrict] = useState(true);
-  const [loading, setLoading] = useState(false);
 
+  // ✅ strict syllabus (RAG)
+  const [strict, setStrict] = useState(true);
+
+  // ✅ NEW: module + complexity (global)
+  const [module, setModule] = useState("ALL");
+  const [complexity, setComplexity] = useState(55);
+
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
   // mobile drawers
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
 
-  /* =========================
-     Load library once
-  ========================= */
+  // load library once
   useEffect(() => {
     (async () => {
       try {
@@ -67,10 +71,7 @@ export function MvegProvider({ children }) {
     })();
   }, []);
 
-  /* =========================
-     ✅ Instant tab switching without re-generation
-     When mode changes and active has cached views, update active.answer
-  ========================= */
+  // ✅ Instant switching (no regen)
   useEffect(() => {
     if (!active?.views) return;
 
@@ -103,7 +104,6 @@ export function MvegProvider({ children }) {
   const onSelect = async (item) => {
     let picked = item;
 
-    // If no answer OR no views (old record/list payload), fetch full doc
     if (!item?.answer || !item?.views) {
       try {
         picked = await getExplanation(item._id, item.mode || "simple");
@@ -127,7 +127,7 @@ export function MvegProvider({ children }) {
     };
 
     setActive(finalPicked);
-    setMode(initialMode); // auto-set active tab from saved item
+    setMode(initialMode);
     setLeftOpen(false);
   };
 
@@ -169,12 +169,16 @@ export function MvegProvider({ children }) {
       try {
         const res = await generateExplanation({
           message: msg,
-          instruction: instructionMap[mode], // backend can ignore this
+          instruction: instructionMap[mode],
           mode,
           strict,
+
+          // ✅ send new controls
+          module,
+          complexity,
         });
 
-        // ✅ Out-of-scope handling (do NOT save in history)
+        // out-of-scope handling
         if (res?.outOfScope) {
           setActive({
             _id: null,
@@ -185,10 +189,7 @@ export function MvegProvider({ children }) {
             answer: res.content || res.answer || "",
             createdAt: res.createdAt || new Date().toISOString(),
             outOfScope: true,
-            outOfScopePayload: res.outOfScopePayload || null,
           });
-
-          setMode(mode || "simple");
           setToast("Please ask a CS/SE/IT academic question");
           return;
         }
@@ -207,18 +208,17 @@ export function MvegProvider({ children }) {
           question: res.question || msg,
           title: res.title || msg.split(" ").slice(0, 6).join(" "),
           mode: selectedMode,
-          views, // ✅ all views cached
-          answer: selectedAnswer, // currently displayed selected view
+          views,
+          answer: selectedAnswer,
           strict,
+          module,
+          complexity,
           createdAt: res.createdAt || new Date().toISOString(),
           outOfScope: false,
         };
 
-        // Add to library/history only for valid academic generations
         setItems((prev) => [newItem, ...prev]);
         setActive(newItem);
-
-        // Keep selected tab
         setMode(selectedMode);
 
         setInput("");
@@ -230,7 +230,7 @@ export function MvegProvider({ children }) {
         setLoading(false);
       }
     },
-    [input, mode, strict, loading],
+    [input, mode, strict, module, complexity, loading],
   );
 
   const onCopy = useCallback(async () => {
@@ -257,16 +257,28 @@ export function MvegProvider({ children }) {
       setItems,
       active,
       setActive,
+
       input,
       setInput,
+
       mode,
       setMode,
+
       strict,
       setStrict,
+
+      // ✅ expose controls to StudyTools
+      module,
+      setModule,
+      complexity,
+      setComplexity,
+
       loading,
       setLoading,
+
       toast,
       setToast,
+
       leftOpen,
       setLeftOpen,
       rightOpen,
@@ -282,9 +294,7 @@ export function MvegProvider({ children }) {
       onExportPdf,
       onRegenerate,
 
-      // optional helpers (useful for PP2 UI badges/indicators)
       hasActiveAllViews: hasAllViews(active),
-      isOutOfScopeActive: !!active?.outOfScope,
     }),
     [
       items,
@@ -292,6 +302,8 @@ export function MvegProvider({ children }) {
       input,
       mode,
       strict,
+      module,
+      complexity,
       loading,
       toast,
       leftOpen,

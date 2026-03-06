@@ -94,16 +94,22 @@ export async function getExplanation(id, mode = "simple") {
 }
 
 /* ----------------------------------
-   GENERATE EXPLANATION (single call -> all views)
+   GENERATE EXPLANATION
+   ✅ now supports: strict + module + complexity
 -----------------------------------*/
-export async function generateExplanation({ message, mode, strict }) {
+export async function generateExplanation({
+  message,
+  mode,
+  strict,
+  module = "ALL",
+  complexity = 55,
+}) {
   try {
     const res = await request("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ message, mode, strict }),
+      body: JSON.stringify({ message, mode, strict, module, complexity }),
     });
 
-    // backend now returns { id, mode, content, views, ... }
     return {
       ...res,
       mode: res.mode || mode || "simple",
@@ -132,6 +138,7 @@ export async function generateExplanation({ message, mode, strict }) {
       question: message,
       title: message.split(" ").slice(0, 6).join(" "),
       createdAt: new Date().toISOString(),
+      outOfScope: false,
     };
   }
 }
@@ -157,6 +164,9 @@ export async function renameExplanation(id, title) {
   });
 }
 
+/* ----------------------------------
+   RELATED CONCEPTS
+-----------------------------------*/
 export async function getRelatedConcepts(explanationId) {
   return request(`/api/explanations/${explanationId}/related`);
 }
