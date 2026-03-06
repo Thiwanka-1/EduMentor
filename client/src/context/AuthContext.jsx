@@ -1,6 +1,4 @@
-// ──────────────────────────────────────────────────────────────
 // Auth Context — Global authentication state management
-// ──────────────────────────────────────────────────────────────
 import { createContext, useState, useEffect } from "react";
 import { getProfile, logoutUser, isAuthenticated } from "../services/aceApi";
 
@@ -48,7 +46,7 @@ export function AuthProvider({ children }) {
     >
       {children}
     </AuthContext.Provider>
-  );
+    );
 }
 
 export default AuthContext;

@@ -9,7 +9,7 @@ export default function StudyTools({ answerText, drawer = false }) {
   const terms = useMemo(
     () => extractKeyTerms(answerText || "", 6),
     [answerText]
-  );
+    );
 
   const related = [
     "UDP vs TCP",
@@ -22,7 +22,7 @@ export default function StudyTools({ answerText, drawer = false }) {
   return (
     <aside
       className={[
-        // 🔧 FIX: height + flex rules
+        // FIX: height + flex rules
         "w-[340px] flex flex-col min-h-0",
 
         // styling
@@ -37,12 +37,12 @@ export default function StudyTools({ answerText, drawer = false }) {
         STUDY TOOLS
       </h3>
 
-      {/* 🔧 FIX: Scrollable content */}
+      {/*  FIX: Scrollable content */}
       <div className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1">
         {/* Strict syllabus */}
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
               Strict Syllabus Only
             </p>
             <button
@@ -70,7 +70,7 @@ export default function StudyTools({ answerText, drawer = false }) {
         {/* Complexity */}
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
               Complexity Level
             </p>
             <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-white/10 dark:text-slate-200 dark:ring-white/10">
@@ -94,7 +94,7 @@ export default function StudyTools({ answerText, drawer = false }) {
 
         {/* Key Terms */}
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
             Key Terms
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -107,8 +107,8 @@ export default function StudyTools({ answerText, drawer = false }) {
                 >
                   #{t}
                 </span>
-              )
-            )}
+                )
+)}
           </div>
         </div>
 
@@ -116,7 +116,7 @@ export default function StudyTools({ answerText, drawer = false }) {
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
           <div className="flex items-center gap-2">
             <Sparkles size={16} />
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
               Generate Quiz
             </p>
           </div>
@@ -132,7 +132,7 @@ export default function StudyTools({ answerText, drawer = false }) {
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
           <div className="flex items-center gap-2">
             <HelpCircle size={16} />
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
               Ask Follow-up
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function StudyTools({ answerText, drawer = false }) {
 
         {/* Related */}
         <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-100">
             Related Concepts
           </p>
           <div className="mt-2 space-y-2">
@@ -160,10 +160,10 @@ export default function StudyTools({ answerText, drawer = false }) {
               >
                 {r}
               </div>
-            ))}
+))}
           </div>
         </div>
       </div>
     </aside>
-  );
+    );
 }

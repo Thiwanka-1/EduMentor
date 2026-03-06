@@ -60,7 +60,7 @@ export function MvegProvider({ children }) {
       }
     }
     setActive(picked);
-    setMode(picked.mode || "simple"); // ✅ auto-set mode from saved item
+    setMode(picked.mode || "simple"); // auto-set mode from saved item
     setLeftOpen(false);
   };
 
@@ -122,7 +122,7 @@ export function MvegProvider({ children }) {
       }
     },
     [input, mode, loading]
-  );
+    );
 
   const onCopy = useCallback(async () => {
     if (!active?.answer) return;
@@ -183,7 +183,7 @@ export function MvegProvider({ children }) {
       onSubmit,
       onCopy,
     ]
-  );
+    );
 
   return <MvegCtx.Provider value={value}>{children}</MvegCtx.Provider>;
 }

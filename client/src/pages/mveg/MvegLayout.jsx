@@ -46,7 +46,7 @@ function InnerLayout() {
 
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      {/* 🔧 FIX: min-h-0 added */}
+      {/*  FIX: min-h-0 added */}
       <div className="h-screen flex min-h-0">
         {/* Desktop left sidebar */}
         <div className="hidden lg:flex min-h-0">
@@ -69,7 +69,7 @@ function InnerLayout() {
         </div>
 
         {/* Main column */}
-        {/* 🔧 FIX: min-h-0 added */}
+        {/*  FIX: min-h-0 added */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
           <Topbar
             breadcrumb={breadcrumb}
@@ -78,13 +78,13 @@ function InnerLayout() {
             onGoHome={() => nav("/")}
           />
 
-          {/* 🔧 FIX: min-h-0 added */}
+          {/*  FIX: min-h-0 added */}
           <div className="flex-1 flex min-w-0 min-h-0">
             {/* Center column */}
-            {/* 🔧 FIX: min-h-0 added */}
+            {/*  FIX: min-h-0 added */}
             <div className="flex-1 min-w-0 min-h-0 relative">
               {/* Scrollable content area */}
-              {/* 🔧 FIX: overflow + min-h-0 */}
+              {/*  FIX: overflow + min-h-0 */}
               <div className="h-full min-h-0 overflow-y-auto pb-[96px]">
                 <Outlet />
               </div>
@@ -159,7 +159,7 @@ function InnerLayout() {
 
       <Toast toast={toast} clear={() => setToast("")} />
     </div>
-  );
+    );
 }
 
 export default function MvegLayout() {
@@ -167,5 +167,5 @@ export default function MvegLayout() {
     <MvegProvider>
       <InnerLayout />
     </MvegProvider>
-  );
+    );
 }

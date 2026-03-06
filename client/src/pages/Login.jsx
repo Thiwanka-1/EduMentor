@@ -48,7 +48,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      {/* ════════════ LEFT PANEL — Branding ════════════ */}
+      {/*  LEFT PANEL — Branding  */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         {/* Background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-violet-600 to-cyan-500" />
@@ -102,11 +102,11 @@ export default function Login() {
               ].map((feat, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <span className="text-xs">✓</span>
+                    <span className="text-xs"></span>
                   </div>
                   <span className="text-sm text-white/80">{feat}</span>
                 </div>
-              ))}
+))}
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ════════════ RIGHT PANEL — Form ════════════ */}
+      {/*  RIGHT PANEL — Form  */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
@@ -149,7 +149,7 @@ export default function Login() {
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 mb-6">
               {error}
             </div>
-          )}
+)}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -164,14 +164,14 @@ export default function Login() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Enter your name"
-                  className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10
                              bg-white dark:bg-[#070b18] text-sm outline-none
                              focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20
                              placeholder:text-slate-400 transition"
                   required
                 />
               </div>
-            )}
+)}
 
             {/* Email */}
             <div>
@@ -183,7 +183,7 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
-                className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10
                            bg-white dark:bg-[#070b18] text-sm outline-none
                            focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20
                            placeholder:text-slate-400 transition"
@@ -202,7 +202,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-white/10
                              bg-white dark:bg-[#070b18] text-sm outline-none
                              focus:border-indigo-500/50 focus:ring-2 focus:ring-indigo-500/20
                              placeholder:text-slate-400 transition pr-12"
@@ -212,21 +212,21 @@ export default function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500
                              hover:text-slate-600 dark:hover:text-slate-300 transition"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
-                  ) : (
+) : (
                     <Eye className="w-4 h-4" />
-                  )}
+)}
                 </button>
               </div>
               {mode === "register" && (
-                <p className="text-xs text-slate-400 mt-1.5">
+                <p className="text-xs text-slate-500 mt-1.5">
                   Must be at least 6 characters
                 </p>
-              )}
+)}
             </div>
 
             {/* Submit */}
@@ -242,11 +242,11 @@ export default function Login() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {mode === "login" ? "Signing in..." : "Creating account..."}
                 </>
-              ) : mode === "login" ? (
+) : mode === "login" ? (
                 "Sign In"
-              ) : (
+) : (
                 "Create Account"
-              )}
+)}
             </button>
           </form>
 
@@ -272,7 +272,7 @@ export default function Login() {
           <div className="mt-6 text-center">
             <button
               onClick={() => navigate("/")}
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
+              className="text-xs text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition"
             >
               ← Back to Home
             </button>
@@ -287,5 +287,5 @@ export default function Login() {
         }
       `}</style>
     </div>
-  );
+    );
 }

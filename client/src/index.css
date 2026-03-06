@@ -6,11 +6,12 @@ body,
   height: 100%;
 }
 
-/* ✅ Default background so you never see white gaps */
+/*  Default background so you never see white gaps */
 body {
   margin: 0;
+  background-color: #f8fafc; /* slate-50 — page canvas */
 }
-/* ✅ Used by your MVEG page padding-bottom */
+/*  Used by your MVEG page padding-bottom */
 :root {
   --bottom-dock: 92px;
 }

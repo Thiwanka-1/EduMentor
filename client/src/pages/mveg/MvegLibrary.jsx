@@ -33,7 +33,7 @@ function Card({ item, onOpen }) {
         {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
       </div>
     </button>
-  );
+    );
 }
 
 export default function MvegLibrary() {
@@ -42,8 +42,8 @@ export default function MvegLibrary() {
   const groups = groupByDay(items);
 
   const onOpen = async (it) => {
-    await onSelect(it); // ✅ sets active (and fetches full if needed)
-    navigate("/mveg/explain"); // ✅ go to explanation page
+    await onSelect(it); // sets active (and fetches full if needed)
+    navigate("/mveg/explain"); // go to explanation page
   };
 
   return (
@@ -74,18 +74,18 @@ export default function MvegLibrary() {
               <div className="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {arr.map((it) => (
                   <Card key={it._id} item={it} onOpen={onOpen} />
-                ))}
+))}
               </div>
             </div>
-          ) : null
-        )}
+) : null
+)}
 
         {!items.length && (
           <div className="mt-16 text-center text-slate-500 dark:text-slate-400">
             No saved explanations yet.
           </div>
-        )}
+)}
       </div>
     </section>
-  );
+    );
 }

@@ -7,7 +7,6 @@ import {
   submitReinforcementAnswers,
 } from "../../services/aceApi";
 
-// ── View states ──────────────────────────────────────────────
 const VIEW = {
   LOADING: "loading",
   LIST: "list",          // show weak topics list
@@ -34,7 +33,6 @@ export default function AceReinforce() {
   // Result state
   const [roundResult, setRoundResult] = useState(null);
 
-  // ── Fetch weak topics ──────────────────────────────────────
   const fetchTopics = useCallback(async () => {
     setView(VIEW.LOADING);
     setError(null);
@@ -52,7 +50,6 @@ export default function AceReinforce() {
     fetchTopics();
   }, [fetchTopics]);
 
-  // ── Start quiz for a topic ─────────────────────────────────
   const handleStart = async (topic) => {
     setActiveTopic(topic);
     setView(VIEW.GENERATING);
@@ -79,12 +76,10 @@ export default function AceReinforce() {
     }
   };
 
-  // ── Select an answer ───────────────────────────────────────
   const selectAnswer = (questionId, answer) => {
     setUserAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
-  // ── Submit answers ─────────────────────────────────────────
   const handleSubmit = async () => {
     setView(VIEW.SUBMITTING);
     setError(null);
@@ -108,7 +103,6 @@ export default function AceReinforce() {
     }
   };
 
-  // ── Back to list ─────────────────────────────────────────
   const backToList = () => {
     setActiveTopic(null);
     setQuestions([]);
@@ -116,25 +110,20 @@ export default function AceReinforce() {
     fetchTopics();
   };
 
-  // ── Difficulty badge colour ────────────────────────────────
   const diffBadge = (d) => {
     if (d === "hard") return "bg-red-600/15 text-red-400";
     if (d === "medium") return "bg-amber-600/15 text-amber-400";
     return "bg-green-600/15 text-green-400";
   };
 
-  // ── Mastery bar colour ────────────────────────────────────
   const masteryColor = (s) => {
     if (s > 85) return "bg-green-500";
     if (s > 60) return "bg-amber-500";
     return "bg-red-500";
   };
 
-  // ══════════════════════════════════════════════════════════
   // RENDER
-  // ══════════════════════════════════════════════════════════
 
-  // ── LOADING / GENERATING ──────────────────────────────────
   if (view === VIEW.LOADING || view === VIEW.GENERATING) {
     return (
       <div className="flex items-center justify-center py-32">
@@ -145,10 +134,9 @@ export default function AceReinforce() {
             : "Loading weak topics…"}
         </span>
       </div>
-    );
+      );
   }
 
-  // ── QUIZ VIEW ─────────────────────────────────────────────
   if (view === VIEW.QUIZ || view === VIEW.SUBMITTING) {
     const q = questions[currentQ];
     const totalQ = questions.length;
@@ -198,7 +186,7 @@ export default function AceReinforce() {
 
         {/* Question card */}
         {q && (
-          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-10">
+          <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-10">
             <span className="text-xs px-3 py-1 rounded-full bg-indigo-600/15 text-indigo-400">
               Q{currentQ + 1}
             </span>
@@ -221,13 +209,13 @@ export default function AceReinforce() {
                       ${
                         isSelected
                           ? "border-indigo-500 bg-indigo-600/10 text-indigo-300"
-                          : "border-black/5 dark:border-white/10 bg-white dark:bg-[#0c1222] hover:border-indigo-500/50"
+                          : "border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#0c1222] hover:border-indigo-500/50"
                       }`}
                   >
                     <span className="font-semibold mr-3">{letter}.</span>
                     {opt}
                   </button>
-                );
+                  );
               })}
             </div>
 
@@ -236,7 +224,7 @@ export default function AceReinforce() {
               <button
                 onClick={() => setCurrentQ((p) => Math.max(0, p - 1))}
                 disabled={currentQ === 0}
-                className="px-4 py-2 rounded-lg text-sm border border-black/10 dark:border-white/10
+                className="px-4 py-2 rounded-lg text-sm border border-slate-200 dark:border-white/10
                            disabled:opacity-30 hover:bg-black/5 dark:hover:bg-white/5 transition"
               >
                 Previous
@@ -251,7 +239,7 @@ export default function AceReinforce() {
                 >
                   Next
                 </button>
-              ) : (
+) : (
                 <button
                   onClick={handleSubmit}
                   disabled={answered < totalQ || view === VIEW.SUBMITTING}
@@ -261,33 +249,32 @@ export default function AceReinforce() {
                 >
                   {view === VIEW.SUBMITTING && (
                     <Loader2 className="animate-spin" size={16} />
-                  )}
+)}
                   Submit Answers
                 </button>
-              )}
+)}
             </div>
           </div>
-        )}
+)}
 
         {error && (
           <p className="text-red-400 text-sm text-center">{error}</p>
-        )}
+)}
       </div>
-    );
+      );
   }
 
-  // ── RESULT VIEW ───────────────────────────────────────────
   if (view === VIEW.RESULT && roundResult) {
     return (
       <div className="max-w-3xl mx-auto space-y-8">
         <div className="text-center py-6">
           {roundResult.completed ? (
             <Trophy className="mx-auto text-amber-400 mb-4" size={48} />
-          ) : null}
+) : null}
 
           <h1 className="text-3xl font-bold">
             {roundResult.completed
-              ? "🎉 Topic Mastered!"
+              ? " Topic Mastered!"
               : "Round Complete"}
           </h1>
 
@@ -297,7 +284,7 @@ export default function AceReinforce() {
         </div>
 
         {/* Score card */}
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
           <div className="grid grid-cols-3 gap-6 text-center">
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 uppercase">
@@ -364,9 +351,9 @@ export default function AceReinforce() {
             >
               {r.isCorrect ? (
                 <CheckCircle className="text-green-400 mt-0.5 shrink-0" size={18} />
-              ) : (
+) : (
                 <XCircle className="text-red-400 mt-0.5 shrink-0" size={18} />
-              )}
+)}
               <div className="text-sm">
                 <p>
                   <span className="font-medium">Q{r.questionId}:</span>{" "}
@@ -375,18 +362,18 @@ export default function AceReinforce() {
                     <span className="text-green-400 ml-2">
                       Correct: {r.correctAnswer}
                     </span>
-                  )}
+)}
                 </p>
               </div>
             </div>
-          ))}
+))}
         </div>
 
         {/* Actions */}
         <div className="flex justify-center gap-4 pt-4">
           <button
             onClick={backToList}
-            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-black/10 dark:border-white/10
+            className="flex items-center gap-2 px-5 py-3 rounded-xl border border-slate-200 dark:border-white/10
                        hover:bg-black/5 dark:hover:bg-white/5 transition text-sm"
           >
             <ArrowLeft size={16} /> Back to Topics
@@ -400,13 +387,12 @@ export default function AceReinforce() {
             >
               <RefreshCw size={16} /> Continue Practicing
             </button>
-          )}
+)}
         </div>
       </div>
-    );
+      );
   }
 
-  // ── TOPIC LIST VIEW (default) ─────────────────────────────
   return (
     <div className="flex gap-8">
       {/* MAIN CONTENT */}
@@ -433,25 +419,25 @@ export default function AceReinforce() {
 
         {error && (
           <p className="text-red-400 text-sm">{error}</p>
-        )}
+)}
 
         {/* Empty state */}
         {weakTopics.length === 0 && !error && (
           <div className="text-center py-20">
             <Trophy className="mx-auto text-amber-400 mb-4" size={48} />
-            <h2 className="text-xl font-semibold">All Clear! 🎉</h2>
+            <h2 className="text-xl font-semibold">All Clear! </h2>
             <p className="text-slate-500 dark:text-slate-400 mt-2">
               You have no weak topics. Keep up the great work!
             </p>
           </div>
-        )}
+)}
 
         {/* Weak topic cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {weakTopics.map((t) => (
             <div
               key={t.topic}
-              className="rounded-2xl border border-black/5 dark:border-white/10
+              className="rounded-2xl border border-slate-200/70 dark:border-white/10
                          bg-white dark:bg-[#070b18] p-5 flex flex-col justify-between"
             >
               <div>
@@ -484,7 +470,7 @@ export default function AceReinforce() {
                 {t.attempts === 0 ? "Start" : "Continue"}
               </button>
             </div>
-          ))}
+))}
         </div>
       </main>
 
@@ -499,7 +485,7 @@ export default function AceReinforce() {
           {weakTopics.map((t) => (
             <div
               key={t.topic}
-              className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-4 mb-4"
+              className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-4 mb-4"
             >
               <div className="flex justify-between items-center mb-2">
                 <p className="text-sm font-medium">{t.topic}</p>
@@ -524,15 +510,15 @@ export default function AceReinforce() {
                 />
               </div>
             </div>
-          ))}
+))}
 
           {weakTopics.length === 0 && (
             <p className="text-xs text-slate-500 dark:text-slate-400">
               No weak topics remaining.
             </p>
-          )}
+)}
         </div>
       </aside>
     </div>
-  );
+    );
 }

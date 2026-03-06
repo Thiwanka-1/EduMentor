@@ -130,7 +130,6 @@ export default function ReviewQuiz() {
     return "text-red-400";
   }
 
-  // ── Detail View ────────────────────────────────────────────
   if (selectedQuiz && quizDetail) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -148,7 +147,7 @@ export default function ReviewQuiz() {
         </button>
 
         {/* Quiz info header */}
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
           <div className="flex items-start justify-between">
             <div>
               <span className="text-xs px-3 py-1 rounded-full bg-indigo-600/15 text-indigo-400 uppercase">
@@ -176,18 +175,18 @@ export default function ReviewQuiz() {
                 onClick={() =>
                   handleRegenerate(
                     quizDetail.materialId?._id || quizDetail.materialId
-                  )
+                    )
                 }
                 disabled={regenerating}
-                className="px-5 py-2.5 rounded-xl border border-black/10 dark:border-white/10 font-semibold text-sm
+                className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 font-semibold text-sm
                            flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition
                            disabled:opacity-50"
               >
                 {regenerating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
+) : (
                   <BookOpen className="w-4 h-4" />
-                )}
+)}
                 New Quiz from Same Material
               </button>
             </div>
@@ -196,7 +195,7 @@ export default function ReviewQuiz() {
 
         {/* Attempt history */}
         {attempts.length > 0 && (
-          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
+          <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
             <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-400" />
               Your Attempts ({attempts.length})
@@ -206,13 +205,13 @@ export default function ReviewQuiz() {
                 <div
                   key={attempt.id || i}
                   className="flex items-center justify-between p-4 rounded-xl bg-black/[0.02] dark:bg-white/[0.03]
-                             border border-black/5 dark:border-white/5"
+                             border border-slate-200/70 dark:border-white/5"
                 >
                   <div className="flex items-center gap-4">
                     <div
                       className={`text-2xl font-bold ${getScoreColor(
                         attempt.score
-                      )}`}
+)}`}
                     >
                       {attempt.score}%
                     </div>
@@ -240,13 +239,13 @@ export default function ReviewQuiz() {
                     Grade {attempt.grade}
                   </span>
                 </div>
-              ))}
+))}
             </div>
           </div>
-        )}
+)}
 
         {/* Questions with explanations */}
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
           <h2 className="font-semibold text-lg mb-4">
             Questions & Explanations
           </h2>
@@ -254,7 +253,7 @@ export default function ReviewQuiz() {
             {quizDetail.questions?.map((q, i) => (
               <div
                 key={q.id || i}
-                className="p-4 rounded-xl border border-black/5 dark:border-white/5
+                className="p-4 rounded-xl border border-slate-200/70 dark:border-white/5
                            bg-black/[0.01] dark:bg-white/[0.02]"
               >
                 <div className="flex items-start gap-3">
@@ -288,16 +287,16 @@ export default function ReviewQuiz() {
                               {opt.replace(/^[A-D]\)\s*/, "")}
                               {isCorrect && (
                                 <CheckCircle className="w-3 h-3 ml-auto" />
-                              )}
+)}
                             </div>
-                          );
+                            );
                         })}
                       </div>
-                    )}
+)}
 
                     {/* Correct answer */}
                     <p className="text-xs text-emerald-400 mt-2">
-                      ✅ Correct:{" "}
+                       Correct:{" "}
                       <span className="font-medium">{q.correct_answer}</span>
                     </p>
 
@@ -311,18 +310,17 @@ export default function ReviewQuiz() {
                           {q.explanation}
                         </p>
                       </div>
-                    )}
+)}
                   </div>
                 </div>
               </div>
-            ))}
+))}
           </div>
         </div>
       </div>
-    );
+      );
   }
 
-  // ── List View ──────────────────────────────────────────────
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
@@ -336,13 +334,13 @@ export default function ReviewQuiz() {
       {/* Search and filter */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search quizzes..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-black/10 dark:border-white/10
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10
                        bg-white dark:bg-[#070b18] text-sm outline-none focus:border-indigo-500/50
                        placeholder:text-slate-400"
           />
@@ -350,7 +348,7 @@ export default function ReviewQuiz() {
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          className="px-4 py-2.5 rounded-xl border border-black/10 dark:border-white/10
+          className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10
                      bg-white dark:bg-[#070b18] text-sm outline-none cursor-pointer"
         >
           <option value="all">All Types</option>
@@ -366,7 +364,7 @@ export default function ReviewQuiz() {
           <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
           <span className="ml-3 text-slate-500">Loading quizzes...</span>
         </div>
-      )}
+)}
 
       {/* Error state */}
       {error && (
@@ -379,11 +377,11 @@ export default function ReviewQuiz() {
             Retry
           </button>
         </div>
-      )}
+)}
 
       {/* Empty state */}
       {!loading && !error && filteredQuizzes.length === 0 && (
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-16 text-center">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-16 text-center">
           <BookOpen className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold mb-2">No Quizzes Yet</h3>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
@@ -397,7 +395,7 @@ export default function ReviewQuiz() {
             Create Your First Quiz
           </button>
         </div>
-      )}
+)}
 
       {/* Quiz list */}
       {!loading && filteredQuizzes.length > 0 && (
@@ -406,7 +404,7 @@ export default function ReviewQuiz() {
             <div
               key={quiz.id}
               onClick={() => viewQuizDetail(quiz.id)}
-              className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18]
+              className="rounded-2xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18]
                          p-5 cursor-pointer hover:border-indigo-500/30 transition group"
             >
               <div className="flex items-center justify-between">
@@ -445,9 +443,9 @@ export default function ReviewQuiz() {
                 </div>
               </div>
             </div>
-          ))}
+))}
         </div>
-      )}
+)}
 
       {/* Loading detail overlay */}
       {loadingDetail && (
@@ -457,7 +455,7 @@ export default function ReviewQuiz() {
             <span className="font-medium">Loading quiz details...</span>
           </div>
         </div>
-      )}
+)}
     </div>
-  );
+    );
 }

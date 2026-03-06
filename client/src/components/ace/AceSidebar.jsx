@@ -65,7 +65,7 @@ export default function AceSidebar() {
 
   return (
     <aside
-      className="w-64 px-5 py-6 border-r border-black/5 dark:border-white/5
+      className="w-64 px-5 py-6 border-r border-slate-200/70 dark:border-white/5
                       bg-white dark:bg-[#070b18] flex flex-col"
     >
       {/* Logo */}
@@ -100,12 +100,12 @@ export default function AceSidebar() {
               {item.icon}
               {item.label}
             </div>
-          );
+            );
         })}
       </nav>
 
       {/* User */}
-      <div className="mt-auto pt-6 border-t border-black/5 dark:border-white/5">
+      <div className="mt-auto pt-6 border-t border-slate-200/70 dark:border-white/5">
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500
@@ -124,12 +124,12 @@ export default function AceSidebar() {
           <button
             onClick={handleLogout}
             title="Sign out"
-            className="text-slate-400 hover:text-red-400 transition shrink-0"
+            className="text-slate-500 hover:text-red-400 transition shrink-0"
           >
             <LogOut size={16} />
           </button>
         </div>
       </div>
     </aside>
-  );
+    );
 }

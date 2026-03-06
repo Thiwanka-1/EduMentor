@@ -27,7 +27,7 @@ export function getExplanation(id) {
 }
 
 export async function generateExplanation(payload) {
-  // ✅ try /generate first, fallback to /api/explanations
+  // try /generate first, fallback to /api/explanations
   try {
     return await request("/api/explanations/generate", {
       method: "POST",

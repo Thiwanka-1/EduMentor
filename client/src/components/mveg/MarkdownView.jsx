@@ -17,18 +17,18 @@ export default function MarkdownView({ text }) {
                 >
                   {children}
                 </code>
-              );
+                );
             }
             return (
               <pre className="rounded-2xl p-4 overflow-x-auto bg-slate-950 text-slate-100">
                 <code {...props}>{children}</code>
               </pre>
-            );
+              );
           },
         }}
       >
         {text || ""}
       </ReactMarkdown>
     </div>
-  );
+    );
 }

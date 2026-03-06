@@ -28,13 +28,13 @@ export default function Sidebar({
   return (
     <aside
       className={[
-        // ✅ critical: full height + allow inner flex children to shrink
+        // critical: full height + allow inner flex children to shrink
         "h-full min-h-0 w-[300px] shrink-0 p-4 flex flex-col",
 
-        // ✅ spacing between blocks
+        // spacing between blocks
         "gap-4",
 
-        // ✅ divider + glass
+        // divider + glass
         "border-r border-slate-200/70 dark:border-white/10",
         "bg-white/40 dark:bg-slate-950/40 backdrop-blur",
 
@@ -74,7 +74,7 @@ export default function Sidebar({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="flex-1 bg-transparent outline-none text-sm text-slate-800 dark:text-slate-100"
+          className="flex-1 bg-transparent outline-none text-sm text-slate-700 dark:text-slate-100"
           placeholder="Search library…"
         />
       </div>
@@ -118,13 +118,13 @@ export default function Sidebar({
         </button>
       </div>
 
-      {/* ✅ Scroll section MUST be flex-1 + min-h-0 */}
+      {/*  Scroll section MUST be flex-1 + min-h-0 */}
       <div className="flex-1 min-h-0 flex flex-col mt-2">
         <div className="text-xs tracking-widest text-slate-500 dark:text-slate-400 font-semibold mb-2 shrink-0">
           MY EXPLANATIONS
         </div>
 
-        {/* ✅ this will now reach the bottom and scroll */}
+        {/*  this will now reach the bottom and scroll */}
         <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-2">
           {filtered.map((it) => (
             <SidebarItem
@@ -135,13 +135,13 @@ export default function Sidebar({
               onDelete={onDelete}
               onRename={onRename}
             />
-          ))}
+))}
 
           {!filtered.length && (
             <div className="text-sm text-slate-500 dark:text-slate-400 py-10 text-center">
               No explanations found.
             </div>
-          )}
+)}
         </div>
       </div>
 
@@ -150,5 +150,5 @@ export default function Sidebar({
         EduMentor • MVEG Module
       </div>
     </aside>
-  );
+    );
 }

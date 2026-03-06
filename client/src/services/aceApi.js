@@ -1,11 +1,8 @@
-// ──────────────────────────────────────────────────────────────
 // ACE API Service  — MongoDB Atlas Version
 // Frontend service layer for communicating with the backend
-// ──────────────────────────────────────────────────────────────
 
 const BASE = import.meta.env.VITE_ACE_API_URL || "http://localhost:5050";
 
-// ── Auth Helper ─────────────────────────────────────────────
 
 function getToken() {
   return localStorage.getItem("edumentor_token");
@@ -24,7 +21,6 @@ function getAuthHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// ── Request Helper ──────────────────────────────────────────
 
 async function jsonRequest(path, options = {}) {
   const res = await fetch(`${BASE}${path}`, {
@@ -52,7 +48,6 @@ async function jsonRequest(path, options = {}) {
   return body;
 }
 
-// ── Auth endpoints ──────────────────────────────────────────
 
 /**
  * Register a new user.
@@ -112,7 +107,6 @@ export function isAuthenticated() {
   return !!getToken();
 }
 
-// ── Material endpoints ──────────────────────────────────────
 
 /**
  * Upload files and extract text.
@@ -154,7 +148,6 @@ export function getMaterialById(id) {
 // Alias for backward compatibility
 export const listMaterials = getMaterials;
 
-// ── Quiz endpoints ──────────────────────────────────────────
 
 /**
  * Generate a quiz from uploaded material.
@@ -203,7 +196,6 @@ export function getQuizzesByMaterial(materialId) {
 // Alias for backward compatibility
 export const getQuiz = getQuizById;
 
-// ── Answer endpoints ────────────────────────────────────────
 
 /**
  * Submit answers for scoring.
@@ -238,7 +230,6 @@ export function getUserAttempts(userId) {
   return jsonRequest(`/api/answers/user/${userId}`);
 }
 
-// ── Reinforcement (ACE) endpoints ───────────────────────────
 
 /**
  * Get weak topics with progress for the logged-in user.
@@ -276,7 +267,97 @@ export function getReinforcementProgress() {
   return jsonRequest("/api/reinforce/progress");
 }
 
-// ── Health ───────────────────────────────────────────────────
+
+/**
+ * Generate flashcards from a PDF file or pasted text.
+ * @param {{ file?: File, text?: string, deckName?: string, description?: string, tags?: string[] }} options
+ */
+export async function generateFlashcards({
+  file,
+  text,
+  deckName,
+  description,
+  tags,
+}) {
+  const formData = new FormData();
+
+  if (file) {
+    formData.append("file", file);
+  }
+  if (text) {
+    formData.append("text", text);
+  }
+  if (deckName) {
+    formData.append("deckName", deckName);
+  }
+  if (description) {
+    formData.append("description", description);
+  }
+  if (tags && tags.length > 0) {
+    tags.forEach((t) => formData.append("tags", t));
+  }
+
+  const res = await fetch(`${BASE}/api/flashcards/generate`, {
+    method: "POST",
+    headers: { ...getAuthHeaders() },
+    body: formData,
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Flashcard generation failed");
+  return data;
+}
+
+/**
+ * List all flashcard decks for the logged-in user.
+ */
+export function listFlashcardDecks() {
+  return jsonRequest("/api/flashcards");
+}
+
+/**
+ * Get a single flashcard deck by ID (with full cards for study mode).
+ */
+export function getFlashcardDeck(deckId) {
+  return jsonRequest(`/api/flashcards/${deckId}`);
+}
+
+/**
+ * Update a flashcard deck.
+ * @param {string} deckId
+ * @param {{ deckName?, description?, tags?, cards? }} payload
+ */
+export function updateFlashcardDeck(deckId, payload) {
+  return jsonRequest(`/api/flashcards/${deckId}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Delete a flashcard deck.
+ */
+export function deleteFlashcardDeck(deckId) {
+  return jsonRequest(`/api/flashcards/${deckId}`, {
+    method: "DELETE",
+  });
+}
+
+
+/**
+ * Get aggregated dashboard summary (mastery, questions today, files, etc).
+ */
+export function getDashboardSummary() {
+  return jsonRequest("/api/dashboard/summary");
+}
+
+/**
+ * Get full progress analysis (mastery, streak, trends, weak points, etc).
+ */
+export function getProgressAnalysis() {
+  return jsonRequest("/api/analysis/progress");
+}
+
 
 /**
  * Check backend + Ollama health.

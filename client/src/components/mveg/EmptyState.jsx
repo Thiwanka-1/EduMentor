@@ -33,8 +33,8 @@ export default function EmptyState({ onPick }) {
           >
             {s}
           </button>
-        ))}
+))}
       </div>
     </div>
-  );
+    );
 }

@@ -1,6 +1,4 @@
-// ──────────────────────────────────────────────────────────────
 // ProtectedRoute — Redirects to login if not authenticated
-// ──────────────────────────────────────────────────────────────
 import { Navigate, useLocation } from "react-router-dom";
 import useAuth from "../hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -20,7 +18,7 @@ export default function ProtectedRoute({ children }) {
           </p>
         </div>
       </div>
-    );
+      );
   }
 
   // Not logged in — redirect to login with return path

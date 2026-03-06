@@ -3,7 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 
-// ✅ MVEG pages
+// MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
 import MvegExplain from "./pages/mveg/MvegExplain";
 import MvegLibrary from "./pages/mveg/MvegLibrary";
@@ -45,7 +45,7 @@ function NotFoundInline() {
         </a>
       </div>
     </div>
-  );
+    );
 }
 
 export default function App() {
@@ -54,7 +54,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
 
-      {/* ✅ MVEG module */}
+      {/*  MVEG module */}
       <Route path="/mveg" element={<MvegLayout />}>
         <Route index element={<Navigate to="/mveg/explain" replace />} />
         <Route path="explain" element={<MvegExplain />} />
@@ -86,5 +86,5 @@ export default function App() {
 
       <Route path="*" element={<NotFoundInline />} />
     </Routes>
-  );
+    );
 }

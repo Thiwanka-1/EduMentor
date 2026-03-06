@@ -26,9 +26,9 @@ export default function ModeTabs({ mode, setMode }) {
         >
           {m.label}
         </button>
-      ))}
+))}
     </div>
-  );
+    );
 }
 
 export const instructionMap = {

@@ -11,7 +11,7 @@ export default function ExplanationCanvas({
 }) {
   return (
     <div className="h-full flex flex-col px-6 py-6">
-      {/* 🔧 FIX: bottom padding equals dock height */}
+      {/*  FIX: bottom padding equals dock height */}
       <div className="max-w-4xl w-full mx-auto pb-[120px]">
         <div
           className="rounded-3xl border border-slate-200/70 bg-white/70 backdrop-blur overflow-hidden
@@ -35,14 +35,14 @@ export default function ExplanationCanvas({
                 <div className="h-4 w-full bg-slate-200 dark:bg-white/10 rounded" />
                 <div className="h-4 w-5/6 bg-slate-200 dark:bg-white/10 rounded" />
               </div>
-            ) : (
+) : (
               <MarkdownView text={active?.answer || ""} />
-            )}
+)}
           </div>
 
           {/* Source material */}
           <div className="px-6 py-5 border-t border-slate-200/70 bg-slate-50/50 dark:border-white/10 dark:bg-white/5">
-            <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-2">
+            <div className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-2">
               Source Material
             </div>
             <ul className="text-sm text-slate-600 dark:text-slate-300 space-y-1">
@@ -56,7 +56,7 @@ export default function ExplanationCanvas({
           </div>
         </div>
 
-        {/* 🔧 FIX: Action bar now ABOVE dock */}
+        {/*  FIX: Action bar now ABOVE dock */}
         <div className="mt-6 flex items-center gap-3">
           <button
             onClick={onCopy}
@@ -89,5 +89,5 @@ export default function ExplanationCanvas({
         </div>
       </div>
     </div>
-  );
+    );
 }

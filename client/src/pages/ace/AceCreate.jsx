@@ -1,7 +1,22 @@
-import { useState, useRef, useCallback } from "react";
-import { Upload, Sparkles, X, FileText, Image, Loader2 } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  Upload,
+  Sparkles,
+  X,
+  FileText,
+  Image,
+  Loader2,
+  Check,
+  Clock,
+  CheckSquare,
+  Square,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { uploadMaterial, generateQuiz } from "../../services/aceApi";
+import {
+  uploadMaterial,
+  generateQuiz,
+  getMaterials,
+} from "../../services/aceApi";
 
 const QUESTION_TYPES = [
   { key: "multiple_choice", title: "Multiple Choice", desc: "Standard 4-option questions" },
@@ -15,33 +30,119 @@ export default function AceCreate() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
-  // ── State ─────────────────────────────────────────────────
-  const [files, setFiles] = useState([]);
+  // local files: each entry is { localId, file } so we can track
+  // selection by stable ID instead of index (avoids StrictMode bugs)
+  const [localFiles, setLocalFiles] = useState([]);
+  const [selectedLocalIds, setSelectedLocalIds] = useState(new Set());
+
+  const [uploadedMats, setUploadedMats] = useState([]); // { id, name } after upload
+  const [selectedIds, setSelectedIds] = useState([]);    // history material IDs
   const [selectedTypes, setSelectedTypes] = useState(["multiple_choice"]);
   const [difficulty, setDifficulty] = useState("Medium");
   const [quantity, setQuantity] = useState(10);
   const [uploading, setUploading] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [materialId, setMaterialId] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState(null); // { type, message }
+  const [uploadStatus, setUploadStatus] = useState(null);
   const [error, setError] = useState(null);
 
-  // ── File handling ─────────────────────────────────────────
+  // History tab state
+  const [activeTab, setActiveTab] = useState("uploaded"); // "uploaded" | "history"
+  const [historyMats, setHistoryMats] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  async function fetchHistory() {
+    setHistoryLoading(true);
+    try {
+      const res = await getMaterials();
+      setHistoryMats(
+        (res.materials || []).map((m) => ({
+          id: m.id,
+          name: m.title || m.files?.[0]?.originalname || "Untitled",
+          files: m.files || [],
+          fileType: m.fileType,
+          uploadedAt: m.uploadedAt || m.createdAt,
+        }))
+        );
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    }
+    setHistoryLoading(false);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    if (activeTab === "history") {
+      (async () => {
+        setHistoryLoading(true);
+        try {
+          const res = await getMaterials();
+          if (!cancelled) {
+            setHistoryMats(
+              (res.materials || []).map((m) => ({
+                id: m.id,
+                name: m.title || m.files?.[0]?.originalname || "Untitled",
+                files: m.files || [],
+                fileType: m.fileType,
+                uploadedAt: m.uploadedAt || m.createdAt,
+              }))
+              );
+          }
+        } catch (err) {
+          console.error("Failed to load history:", err);
+        }
+        if (!cancelled) setHistoryLoading(false);
+      })();
+    }
+    return () => { cancelled = true; };
+  }, [activeTab]);
+
   const handleFiles = useCallback((newFiles) => {
-    const allowed = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/png", "image/jpeg"];
+    const allowed = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/png",
+      "image/jpeg",
+    ];
     const valid = Array.from(newFiles).filter((f) => allowed.includes(f.type));
     if (valid.length < newFiles.length) {
       setError("Some files were skipped — only PDF, DOCX, and PNG are supported.");
     }
-    setFiles((prev) => [...prev, ...valid]);
-    setMaterialId(null); // reset if new files added
+    if (valid.length === 0) return;
+
+    // Assign a stable localId to each new file so selection
+    // is ID-based (not index-based) — immune to StrictMode double-runs.
+    const tagged = valid.map((f) => ({
+      localId: `local-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      file: f,
+    }));
+
+    setLocalFiles((prev) => [...prev, ...tagged]);
+    // Auto-select all newly added files
+    setSelectedLocalIds((prev) => {
+      const next = new Set(prev);
+      tagged.forEach(({ localId }) => next.add(localId));
+      return next;
+    });
     setUploadStatus(null);
   }, []);
 
-  const removeFile = (index) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
-    setMaterialId(null);
+  const removeLocalFile = (localId) => {
+    setLocalFiles((prev) => prev.filter((f) => f.localId !== localId));
+    setSelectedLocalIds((prev) => {
+      const next = new Set(prev);
+      next.delete(localId);
+      return next;
+    });
     setUploadStatus(null);
+  };
+
+  const toggleLocalSelect = (localId) => {
+    setSelectedLocalIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(localId)) next.delete(localId);
+      else next.add(localId);
+      return next;
+    });
   };
 
   const handleDrop = (e) => {
@@ -49,39 +150,76 @@ export default function AceCreate() {
     handleFiles(e.dataTransfer.files);
   };
 
-  // ── Toggle question type ──────────────────────────────────
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+  };
+
   const toggleType = (key) => {
     setSelectedTypes((prev) =>
       prev.includes(key) ? prev.filter((t) => t !== key) : [...prev, key]
-    );
+      );
   };
 
-  // ── Upload + Generate ─────────────────────────────────────
   const handleGenerate = async () => {
-    if (files.length === 0) {
-      setError("Please upload at least one file before generating.");
+    const selectedLocalFiles = localFiles.filter((f) => selectedLocalIds.has(f.localId));
+    const hasSelectedLocal = selectedLocalFiles.length > 0 && uploadedMats.length === 0;
+    const hasSelectedHistory = selectedIds.length > 0;
+
+    if (!hasSelectedLocal && !hasSelectedHistory) {
+      setError("Please select at least one file.");
       return;
     }
 
     setError(null);
 
     try {
-      // Step 1: Upload files (if not yet uploaded)
-      let matId = materialId;
-      if (!matId) {
-        setUploading(true);
-        setUploadStatus({ type: "info", message: "Uploading and extracting text..." });
+      // Use Set to guarantee no duplicate IDs ever reach the backend
+      const idSet = new Set(selectedIds);
 
-        const uploadRes = await uploadMaterial(files);
-        matId = uploadRes.materialId;
-        setMaterialId(matId);
-        setUploadStatus({ type: "success", message: `Extracted ${uploadRes.textLength.toLocaleString()} characters from ${uploadRes.files.length} file(s)` });
+      // Step 1: Upload each selected local file individually
+      if (selectedLocalFiles.length > 0 && uploadedMats.length === 0) {
+        setUploading(true);
+        const newMats = [];
+        let totalChars = 0;
+
+        for (let i = 0; i < selectedLocalFiles.length; i++) {
+          const { file } = selectedLocalFiles[i];
+          setUploadStatus({
+            type: "info",
+            message: `Uploading file ${i + 1}/${selectedLocalFiles.length}: ${file.name}…`,
+          });
+
+          const uploadRes = await uploadMaterial([file]);
+          newMats.push({ id: uploadRes.materialId, name: file.name });
+          totalChars += uploadRes.textLength || 0;
+          idSet.add(uploadRes.materialId); // Set prevents duplicates automatically
+        }
+
+        setUploadedMats(newMats);
+        setSelectedIds([...idSet]);
+
+        setUploadStatus({
+          type: "success",
+          message: `Uploaded ${newMats.length} file(s) — ${totalChars.toLocaleString()} chars total`,
+        });
         setUploading(false);
+        fetchHistory();
+      }
+
+      const allIds = [...idSet];
+      if (allIds.length === 0) {
+        setError("Please select at least one file.");
+        return;
       }
 
       // Step 2: Generate quiz
       setGenerating(true);
-      setUploadStatus({ type: "info", message: "AI is generating your quiz… this may take up to a minute." });
+      setUploadStatus({
+        type: "info",
+        message: `AI is generating quiz from ${allIds.length} material(s)… this may take up to a minute.`,
+      });
 
       const quizType =
         selectedTypes.length === 1
@@ -91,14 +229,17 @@ export default function AceCreate() {
           : "multiple_choice";
 
       const result = await generateQuiz({
-        materialId: matId,
+        materialIds: allIds,
         questionType: quizType,
         difficulty: difficulty.toLowerCase(),
         quantity,
       });
 
       setGenerating(false);
-      setUploadStatus({ type: "success", message: `Generated ${result.questions.length} questions!` });
+      setUploadStatus({
+        type: "success",
+        message: `Generated ${result.questions.length} questions!`,
+      });
 
       // Navigate to session with quiz data
       navigate("/ace/session", {
@@ -106,7 +247,7 @@ export default function AceCreate() {
           quizId: result.quizId,
           questions: result.questions,
           config: result.config,
-          materialId: matId,
+          materialId: result.materialId,
         },
       });
     } catch (err) {
@@ -118,11 +259,17 @@ export default function AceCreate() {
   };
 
   const isProcessing = uploading || generating;
+  const totalSelected =
+    selectedIds.length +
+    (uploadedMats.length === 0 ? selectedLocalIds.size : 0);
 
-  // ── File icon helper ──────────────────────────────────────
+  const canGenerate = !isProcessing && totalSelected > 0;
+
   function fileIcon(file) {
-    if (file.type === "application/pdf") return <FileText className="w-5 h-5 text-red-400" />;
-    if (file.type.startsWith("image/")) return <Image className="w-5 h-5 text-cyan-400" />;
+    if (file?.type === "application/pdf" || file?.mimetype === "application/pdf")
+      return <FileText className="w-5 h-5 text-red-400" />;
+    if (file?.type?.startsWith("image/") || file?.mimetype?.startsWith("image/"))
+      return <Image className="w-5 h-5 text-cyan-400" />;
     return <FileText className="w-5 h-5 text-indigo-400" />;
   }
 
@@ -155,7 +302,7 @@ export default function AceCreate() {
               <X className="w-4 h-4" />
             </button>
           </div>
-        )}
+)}
 
         {/* Status */}
         {uploadStatus && (
@@ -168,16 +315,16 @@ export default function AceCreate() {
           >
             {uploadStatus.type === "info" && (
               <Loader2 className="w-4 h-4 animate-spin" />
-            )}
+)}
             {uploadStatus.message}
           </div>
-        )}
+)}
 
         {/* Upload Card */}
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          className="rounded-3xl border border-dashed border-black/10 dark:border-white/10 bg-white dark:bg-[#070b18]
+          className="rounded-3xl border border-dashed border-slate-200 dark:border-white/10 bg-white dark:bg-[#070b18]
                      p-10 flex flex-col items-center justify-center text-center
                      hover:border-indigo-500/40 transition cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
@@ -197,7 +344,7 @@ export default function AceCreate() {
 
           <h3 className="font-semibold mb-1">Upload Source Material</h3>
 
-          <p className="text-sm text-slate-400 mb-5">
+          <p className="text-sm text-slate-500 mb-5">
             Drag & drop files here or click browse.
             <br />
             Supported: PDF, DOCX, PNG (Max 50MB)
@@ -216,53 +363,175 @@ export default function AceCreate() {
           </button>
         </div>
 
-        {/* Uploaded files */}
-        {files.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold tracking-widest text-slate-500 mb-3">
-              UPLOADED FILES ({files.length})
-            </p>
-
-            <div className="space-y-3">
-              {files.map((f, i) => (
-                <div
-                  key={`${f.name}-${i}`}
-                  className="flex items-center justify-between
-                             rounded-xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    {fileIcon(f)}
-                    <div>
-                      <p className="text-sm font-medium">{f.name}</p>
-                      <p className="text-xs text-slate-400">
-                        {(f.size / (1024 * 1024)).toFixed(2)} MB •{" "}
-                        {materialId ? "Processed" : "Ready for processing"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs ${materialId ? "text-emerald-400" : "text-amber-400"}`}>
-                      {materialId ? "✔ Processed" : "⏳ Pending"}
-                    </span>
-                    {!isProcessing && (
-                      <button
-                        onClick={() => removeFile(i)}
-                        className="text-slate-400 hover:text-red-400 transition"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/*  Tabs: Uploaded Files | History  */}
+        <div>
+          <div className="flex border-b border-slate-200/70 dark:border-white/10 mb-4">
+            <button
+              onClick={() => setActiveTab("uploaded")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+                activeTab === "uploaded"
+                  ? "border-indigo-500 text-indigo-500"
+                  : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+            Uploaded Files {localFiles.length > 0 && `(${localFiles.length})`}
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+                activeTab === "history"
+                  ? "border-indigo-500 text-indigo-500"
+                  : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              History {historyMats.length > 0 && `(${historyMats.length})`}
+            </button>
           </div>
-        )}
+
+          {/*  UPLOADED FILES TAB  */}
+          {activeTab === "uploaded" && (
+            <div className="space-y-3">
+              {localFiles.length === 0 ? (
+                <p className="text-sm text-slate-500 py-4 text-center">
+                  No files uploaded yet. Drag & drop or browse to add files.
+                </p>
+) : (
+                localFiles.map(({ localId, file }) => {
+                  // After upload, find the corresponding materialId for this file
+                  const mat = uploadedMats.find((m) => m.name === file.name);
+                  const isUploaded = !!mat;
+                  const isSelected = isUploaded
+                    ? selectedIds.includes(mat.id)
+                    : selectedLocalIds.has(localId);
+
+                  const handleClick = () => {
+                    if (isUploaded) {
+                      toggleSelect(mat.id);
+                    } else {
+                      toggleLocalSelect(localId);
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={localId}
+                      className={`flex items-center justify-between rounded-xl border p-4 transition cursor-pointer
+                        ${
+                          isSelected
+                            ? "border-indigo-500/50 bg-indigo-600/5"
+                            : "border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18]"
+                        }`}
+                      onClick={handleClick}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5 text-indigo-400 shrink-0" />
+) : (
+                          <Square className="w-5 h-5 text-slate-500 shrink-0" />
+)}
+
+                        {fileIcon(file)}
+                        <div>
+                          <p className="text-sm font-medium">{file.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB •{" "}
+                            {isUploaded ? "Processed" : "Ready for processing"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {isSelected && (
+                          <span className="text-xs text-indigo-400 font-medium">
+                             Selected for quiz
+                          </span>
+)}
+                        <span className={`text-xs ${isUploaded ? "text-emerald-400" : "text-amber-400"}`}>
+                          {isUploaded ? " Processed" : "⏳ Pending"}
+                        </span>
+                        {!isProcessing && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeLocalFile(localId);
+                            }}
+                            className="text-slate-500 hover:text-red-400 transition"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+)}
+                      </div>
+                    </div>
+                    );
+                })
+)}
+            </div>
+)}
+
+          {/*  HISTORY TAB  */}
+          {activeTab === "history" && (
+            <div className="space-y-3">
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-slate-500">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Loading history…
+                </div>
+) : historyMats.length === 0 ? (
+                <p className="text-sm text-slate-500 py-4 text-center">
+                  No previously uploaded materials found.
+                </p>
+) : (
+                historyMats.map((m) => {
+                  const isSelected = selectedIds.includes(m.id);
+                  const filename =
+                    m.files?.[0]?.originalname || m.name || "Untitled";
+
+                  return (
+                    <div
+                      key={m.id}
+                      onClick={() => toggleSelect(m.id)}
+                      className={`flex items-center justify-between rounded-xl border p-4 transition cursor-pointer
+                        ${
+                          isSelected
+                            ? "border-indigo-500/50 bg-indigo-600/5"
+                            : "border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] hover:border-slate-200 dark:hover:border-white/20"
+                        }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {isSelected ? (
+                          <CheckSquare className="w-5 h-5 text-indigo-400 shrink-0" />
+) : (
+                          <Square className="w-5 h-5 text-slate-500 shrink-0" />
+)}
+
+                        <FileText className="w-5 h-5 text-red-400" />
+
+                        <div>
+                          <p className="text-sm font-medium">{filename}</p>
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(m.uploadedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {isSelected && (
+                        <span className="text-xs text-indigo-400 font-medium flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" />
+                          Selected for quiz
+                        </span>
+)}
+                    </div>
+                    );
+                })
+)}
+            </div>
+)}
+        </div>
       </div>
 
       {/* ================= RIGHT ================= */}
-      <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6 space-y-6">
+      <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Configuration</h3>
           <span className="text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-400">
@@ -270,9 +539,21 @@ export default function AceCreate() {
           </span>
         </div>
 
+        {/* Selected Files Counter */}
+        <div className="rounded-xl border border-slate-200/70 dark:border-white/10 px-4 py-3 flex items-center justify-between">
+          <span className="text-sm text-slate-500 dark:text-slate-400">Selected Files</span>
+          <span
+            className={`text-sm font-bold ${
+              totalSelected > 0 ? "text-indigo-400" : "text-slate-500"
+            }`}
+          >
+            {totalSelected}
+          </span>
+        </div>
+
         {/* Question Types */}
         <div>
-          <p className="text-xs font-semibold mb-3 text-slate-400">QUESTION TYPES</p>
+          <p className="text-xs font-semibold mb-3 text-slate-500">QUESTION TYPES</p>
 
           {QUESTION_TYPES.map((t) => (
             <ConfigOption
@@ -282,12 +563,12 @@ export default function AceCreate() {
               active={selectedTypes.includes(t.key)}
               onClick={() => toggleType(t.key)}
             />
-          ))}
+))}
         </div>
 
         {/* Difficulty */}
         <div>
-          <p className="text-xs font-semibold mb-3 text-slate-400">DIFFICULTY LEVEL</p>
+          <p className="text-xs font-semibold mb-3 text-slate-500">DIFFICULTY LEVEL</p>
 
           <div className="flex gap-2">
             {DIFFICULTY_LEVELS.map((d) => (
@@ -303,17 +584,17 @@ export default function AceCreate() {
               >
                 {d}
               </button>
-            ))}
+))}
           </div>
         </div>
 
         {/* Quantity */}
         <div>
-          <p className="text-xs font-semibold mb-3 text-slate-400">QUANTITY</p>
+          <p className="text-xs font-semibold mb-3 text-slate-500">QUANTITY</p>
 
           <div
             className="flex items-center justify-between rounded-xl
-                        border border-black/5 dark:border-white/10 px-4 py-3"
+                        border border-slate-200/70 dark:border-white/10 px-4 py-3"
           >
             <span className="text-sm">Total Questions</span>
 
@@ -351,7 +632,7 @@ export default function AceCreate() {
         {/* CTA */}
         <button
           onClick={handleGenerate}
-          disabled={isProcessing || files.length === 0}
+          disabled={!canGenerate}
           className="w-full py-3 rounded-xl font-semibold flex items-center
                      justify-center gap-2
                      bg-gradient-to-r from-indigo-500 to-cyan-500
@@ -363,12 +644,12 @@ export default function AceCreate() {
               <Loader2 className="w-4 h-4 animate-spin" />
               {uploading ? "Processing Files…" : "Generating Quiz…"}
             </>
-          ) : (
+) : (
             <>
               <Sparkles className="w-4 h-4" />
               Generate Study Set
             </>
-          )}
+)}
         </button>
 
         <p className="text-[11px] text-slate-500 text-center">
@@ -376,7 +657,7 @@ export default function AceCreate() {
         </p>
       </div>
     </div>
-  );
+    );
 }
 
 /* ================= SUB COMPONENT ================= */
@@ -389,13 +670,13 @@ function ConfigOption({ title, desc, active, onClick }) {
         ${
           active
             ? "border-indigo-500/50 bg-indigo-600/10"
-            : "border-black/5 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-black/10 dark:hover:border-white/20"
+            : "border-slate-200/70 dark:border-white/10 bg-black/5 dark:bg-white/5 hover:border-slate-200 dark:hover:border-white/20"
         }`}
     >
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium">{title}</p>
-          <p className="text-xs text-slate-400">{desc}</p>
+          <p className="text-xs text-slate-500">{desc}</p>
         </div>
         <div
           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${
@@ -406,5 +687,5 @@ function ConfigOption({ title, desc, active, onClick }) {
         </div>
       </div>
     </div>
-  );
+    );
 }

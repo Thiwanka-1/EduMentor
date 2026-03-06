@@ -25,7 +25,6 @@ export default function AceSession() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ── Get quiz data from navigation state or fall back to demo ──
   const quizData = location.state || {};
   const questions = quizData.questions?.length > 0 ? quizData.questions : DEMO_QUESTIONS;
   const quizId = quizData.quizId || null;
@@ -50,7 +49,6 @@ export default function AceSession() {
     return Math.round((correct / answered) * 100);
   }, [results, answered]);
 
-  // ── Check answer locally ──────────────────────────────────
   function checkAnswer() {
     const answer = q.type === "multiple_choice" || q.type === "true_false" ? selectedOption : userAnswer;
     if (!answer) return;
@@ -86,7 +84,6 @@ export default function AceSession() {
     }
   }
 
-  // ── Submit all answers to backend ─────────────────────────
   async function handleFinish() {
     if (!quizId) {
       // Demo mode – just show local results
@@ -122,7 +119,6 @@ export default function AceSession() {
     }
   }
 
-  // ── Regenerate quiz ───────────────────────────────────────
   async function handleRegenerate() {
     if (!materialId) {
       navigate("/ace/create");
@@ -160,13 +156,12 @@ export default function AceSession() {
 
   const allAnswered = answered >= total;
 
-  // ── Final results screen ──────────────────────────────────
   if (finalResult) {
     return (
       <div className="max-w-2xl mx-auto space-y-8 py-8">
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-10 text-center">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-10 text-center">
           <div className="text-6xl mb-4">
-            {finalResult.score >= 80 ? "🎉" : finalResult.score >= 60 ? "👍" : "💪"}
+            {finalResult.score >= 80 ? "" : finalResult.score >= 60 ? "" : ""}
           </div>
 
           <h1 className="text-3xl font-semibold mb-2">Quiz Complete!</h1>
@@ -174,15 +169,15 @@ export default function AceSession() {
           <div className="grid grid-cols-3 gap-4 mt-8 mb-8">
             <div className="rounded-2xl bg-black/5 dark:bg-white/5 p-4">
               <p className="text-3xl font-bold text-indigo-400">{finalResult.score}%</p>
-              <p className="text-xs text-slate-400 mt-1">Score</p>
+              <p className="text-xs text-slate-500 mt-1">Score</p>
             </div>
             <div className="rounded-2xl bg-black/5 dark:bg-white/5 p-4">
               <p className="text-3xl font-bold text-emerald-400">{finalResult.correctCount}</p>
-              <p className="text-xs text-slate-400 mt-1">Correct</p>
+              <p className="text-xs text-slate-500 mt-1">Correct</p>
             </div>
             <div className="rounded-2xl bg-black/5 dark:bg-white/5 p-4">
-              <p className="text-3xl font-bold text-slate-400">{finalResult.grade}</p>
-              <p className="text-xs text-slate-400 mt-1">Grade</p>
+              <p className="text-3xl font-bold text-slate-500">{finalResult.grade}</p>
+              <p className="text-xs text-slate-500 mt-1">Grade</p>
             </div>
           </div>
 
@@ -199,7 +194,7 @@ export default function AceSession() {
 
             <button
               onClick={() => navigate("/ace")}
-              className="px-6 py-3 rounded-xl border border-black/10 dark:border-white/10 font-semibold
+              className="px-6 py-3 rounded-xl border border-slate-200 dark:border-white/10 font-semibold
                          flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -225,30 +220,29 @@ export default function AceSession() {
                 <div className="flex items-start gap-3">
                   {r?.correct ? (
                     <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
-                  ) : (
+) : (
                     <XCircle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
-                  )}
+)}
                   <div className="min-w-0">
                     <p className="text-sm font-medium">{question.question}</p>
                     {r && !r.correct && (
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Correct: <span className="text-emerald-400">{question.correct_answer}</span>
                       </p>
-                    )}
+)}
                     {question.explanation && (
                       <p className="text-xs text-slate-500 mt-1 italic">{question.explanation}</p>
-                    )}
+)}
                   </div>
                 </div>
               </div>
-            );
+              );
           })}
         </div>
       </div>
-    );
+      );
   }
 
-  // ── Main quiz view ────────────────────────────────────────
   return (
     <div className="flex gap-8">
       {/* ================= LEFT PANEL ================= */}
@@ -299,16 +293,16 @@ export default function AceSession() {
               >
                 {status?.correct === true && <CheckCircle size={14} className="text-emerald-400" />}
                 {status?.correct === false && <XCircle size={14} className="text-red-400" />}
-                {status === undefined && <span className="w-3.5 text-center text-xs text-slate-400">{i + 1}</span>}
+                {status === undefined && <span className="w-3.5 text-center text-xs text-slate-500">{i + 1}</span>}
 
                 <span className="truncate">Q{i + 1}</span>
               </div>
-            );
+              );
           })}
         </div>
 
         {/* Accuracy */}
-        <div className="pt-4 border-t border-black/10 dark:border-white/10">
+        <div className="pt-4 border-t border-slate-200 dark:border-white/10">
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">SESSION ACCURACY</p>
           <p className={`text-lg font-semibold ${accuracy >= 70 ? "text-emerald-400" : accuracy >= 50 ? "text-amber-400" : "text-red-400"}`}>
             {accuracy}%
@@ -325,7 +319,7 @@ export default function AceSession() {
             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             Finish & Submit
           </button>
-        )}
+)}
       </aside>
 
       {/* ================= MAIN ================= */}
@@ -348,7 +342,7 @@ export default function AceSession() {
         </div>
 
         {/* Question */}
-        <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
+        <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-8">
           <h1 className="text-2xl font-semibold leading-snug">{q.question}</h1>
         </div>
 
@@ -377,7 +371,7 @@ export default function AceSession() {
                         ? "border-red-500/50 bg-red-500/10"
                         : isSelected
                         ? "border-indigo-500/50 bg-indigo-500/10"
-                        : "border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] hover:border-indigo-500/30"
+                        : "border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] hover:border-indigo-500/30"
                     }
                     disabled:cursor-default`}
                 >
@@ -397,10 +391,10 @@ export default function AceSession() {
                   </span>
                   <span className="text-sm">{option.replace(/^[A-D]\)\s*/, "")}</span>
                 </button>
-              );
+                );
             })}
           </div>
-        ) : q.type === "true_false" ? (
+) : q.type === "true_false" ? (
           <div className="flex gap-4">
             {["True", "False"].map((tf) => {
               const isSelected = selectedOption === tf;
@@ -420,18 +414,18 @@ export default function AceSession() {
                         ? "border-red-500/50 bg-red-500/10 text-red-400"
                         : isSelected
                         ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-400"
-                        : "border-black/5 dark:border-white/10 hover:border-indigo-500/30"
+                        : "border-slate-200/70 dark:border-white/10 hover:border-indigo-500/30"
                     }
                     disabled:cursor-default`}
                 >
                   {tf}
                 </button>
-              );
+                );
             })}
           </div>
-        ) : (
+) : (
           /* Short answer */
-          <div className="rounded-3xl border border-black/5 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
+          <div className="rounded-3xl border border-slate-200/70 dark:border-white/10 bg-white dark:bg-[#070b18] p-6">
             <textarea
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
@@ -440,7 +434,7 @@ export default function AceSession() {
               disabled={checked}
             />
           </div>
-        )}
+)}
 
         {/* Explanation */}
         {showExplanation && q.explanation && (
@@ -448,7 +442,7 @@ export default function AceSession() {
             <p className="text-xs font-semibold text-indigo-400 mb-1">EXPLANATION</p>
             <p className="text-sm text-slate-600 dark:text-slate-300">{q.explanation}</p>
           </div>
-        )}
+)}
 
         {/* Correct answer display after checking */}
         {checked && (
@@ -464,19 +458,19 @@ export default function AceSession() {
                 <>
                   <CheckCircle className="w-4 h-4 text-emerald-400" /> Correct!
                 </>
-              ) : (
+) : (
                 <>
                   <XCircle className="w-4 h-4 text-red-400" /> Incorrect
                 </>
-              )}
+)}
             </p>
             {!results[q.id]?.correct && (
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Correct answer: <span className="text-emerald-400">{q.correct_answer}</span>
               </p>
-            )}
+)}
           </div>
-        )}
+)}
 
         {/* Actions */}
         <div className="flex justify-between items-center">
@@ -495,7 +489,7 @@ export default function AceSession() {
               >
                 ← Previous
               </button>
-            )}
+)}
 
             {!checked && (
               <button
@@ -507,7 +501,7 @@ export default function AceSession() {
               >
                 Skip
               </button>
-            )}
+)}
           </div>
 
           {!checked ? (
@@ -519,11 +513,11 @@ export default function AceSession() {
             >
               Check Answer →
             </button>
-          ) : current < total - 1 ? (
+) : current < total - 1 ? (
             <button onClick={nextQuestion} className="px-6 py-3 rounded-xl bg-indigo-600 text-white font-semibold">
               Next →
             </button>
-          ) : (
+) : (
             <button
               onClick={handleFinish}
               disabled={submitting}
@@ -533,9 +527,9 @@ export default function AceSession() {
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Finish Quiz
             </button>
-          )}
+)}
         </div>
       </main>
     </div>
-  );
+    );
 }

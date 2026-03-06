@@ -28,7 +28,7 @@ export default function Topbar({
         </span>
         {breadcrumb?.path ? (
           <span className="opacity-70 truncate">› {breadcrumb.path}</span>
-        ) : null}
+) : null}
       </div>
 
       <div className="flex items-center gap-2">
@@ -61,5 +61,5 @@ export default function Topbar({
         </button>
       </div>
     </header>
-  );
+    );
 }

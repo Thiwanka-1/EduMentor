@@ -15,10 +15,10 @@ function Icon({ children, className = "" }) {
     >
       {children}
     </span>
-  );
+    );
 }
 
-/** ✅ FIX: added `to` prop */
+/**  FIX: added `to` prop */
 function ModuleCard({ title, desc, tag, accent = "indigo", to }) {
   const navigate = useNavigate();
 
@@ -89,7 +89,7 @@ function ModuleCard({ title, desc, tag, accent = "indigo", to }) {
         />
       </div>
     </div>
-  );
+    );
 }
 
 export default function Home() {
@@ -158,7 +158,7 @@ export default function Home() {
                 >
                   Dashboard →
                 </button>
-              ) : (
+) : (
                 <button
                   onClick={() => navigate("/login")}
                   className="hidden sm:inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold
@@ -167,7 +167,7 @@ export default function Home() {
                 >
                   Sign In
                 </button>
-              )}
+)}
 
               <button
                 type="button"
@@ -178,7 +178,7 @@ export default function Home() {
                            dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60
                            transition"
               >
-                {theme === "dark" ? "☀️" : "🌙"}
+                {theme === "dark" ? "" : ""}
               </button>
             </div>
           </div>
@@ -249,7 +249,7 @@ export default function Home() {
                     {s.v}
                   </p>
                 </div>
-              ))}
+))}
             </div>
           </div>
 
@@ -298,7 +298,7 @@ export default function Home() {
                         >
                           {m}
                         </span>
-                      ))}
+))}
                     </div>
                   </div>
                 </div>
@@ -417,7 +417,7 @@ export default function Home() {
             desc="Ask questions on your lecture content and get structured help and next steps."
           />
 
-          {/* ✅ THIS ONE NAVIGATES */}
+          {/*  THIS ONE NAVIGATES */}
           <ModuleCard
             accent="indigo"
             title="Multi-View Explanation"
@@ -512,5 +512,5 @@ export default function Home() {
         html { scroll-behavior: smooth; }
       `}</style>
     </div>
-  );
+    );
 }

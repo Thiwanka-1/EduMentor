@@ -39,7 +39,7 @@ The frontend provides a modern, responsive user interface for uploading document
 
 ---
 
-## 3. Backend Implementation (`/server`)
+## 3. Backend Implementation (`/api`)
 
 The backend functions as the orchestrator, handling file processing, AI prompt engineering, state management, and strict JSON validation.
 
@@ -53,16 +53,16 @@ The backend functions as the orchestrator, handling file processing, AI prompt e
 
 ### Key Modules & Functions
 
-#### 1. File Upload & Parsing (`utils/fileParser.js` & `controllers/material.controller.js`)
+#### 1. File Upload & Parsing (`src/utils/fileParser.js` & `src/controllers/material.controller.js`)
 
 - Uses `multer` to accept uploads and store them temporarily in `./uploads`.
 - Routes the file to the correct parser based on MIME type:
   - `pdf-parse`: Extracts raw text from PDFs.
   - `mammoth`: Extracts raw text from DOCX files.
   - `tesseract.js`: Performs Optical Character Recognition (OCR) on images.
-- The extracted text is saved to persistent local storage using `services/materialStore.js` (saved as JSON in `./data/materials/`).
+- The extracted text is saved to persistent local storage using `src/services/materialStore.js` (saved as JSON in `./data/materials/`).
 
-#### 2. Quiz Controller (`controllers/quiz.controller.js`)
+#### 2. Quiz Controller (`src/controllers/quiz.controller.js`)
 
 - Receives the quiz configuration (`materialId`, `questionType`, `difficulty`, `quantity`).
 - Retrieves the extracted text from storage.
@@ -70,13 +70,13 @@ The backend functions as the orchestrator, handling file processing, AI prompt e
 - Sends the prompt to the Ollama Service.
 - Receives the AI's response, passes it through the JSON Sanitizer, and saves the final Quiz object to `./data/quizzes/`.
 
-#### 3. Prompt Engineering (`utils/promptBuilder.js`)
+#### 3. Prompt Engineering (`src/utils/promptBuilder.js`)
 
 - **Aggressive Speed Optimization**: Truncates the study material to a maximum of **1,000 characters**. This prevents the local LLM from taking several minutes to read massive PDFs, keeping generation times under 45 seconds.
 - **Strict Templating**: Dynamically builds a harsh, rule-based prompt that injects a concrete JSON example (e.g., exactly how a True/False array should look).
 - **Behavioral Enforcement**: Commands the AI to output _only_ valid JSON with absolutely no markdown headers or conversational filler.
 
-#### 4. Local AI Service (`services/ollama.service.js`)
+#### 4. Local AI Service (`src/services/ollama.service.js`)
 
 - Communicates directly with the local Ollama daemon (`http://127.0.0.1:11434`).
 - **Model**: Defaults to `phi3` (optimized for speed and low memory usage, 2.4GB).
@@ -85,7 +85,7 @@ The backend functions as the orchestrator, handling file processing, AI prompt e
   - `num_ctx: 1024`: Shrinks the AI's memory context window. This uses significantly less RAM and makes initialization instant.
   - `num_predict: 1536`: Caps the generation length, preventing the AI from rambling on forever and wasting processing time.
 
-#### 5. Output Sanitization (`utils/jsonSanitizer.js`)
+#### 5. Output Sanitization (`src/utils/jsonSanitizer.js`)
 
 - Local LLMs frequently make syntax errors or wrap outputs in markdown block quotes (`json ... `).
 - This module uses a 3-pass strategy to rescue AI output:
@@ -93,7 +93,7 @@ The backend functions as the orchestrator, handling file processing, AI prompt e
   2.  If that fails, it uses Regex to find the first `[` and last `]` to selectively extract just the questions array, ignoring trailing conversational garbage.
   3.  Throws explicit errors if the JSON is completely broken, triggering the backend's automatic retry logic.
 
-#### 6. Answer Controller (`controllers/answer.controller.js`)
+#### 6. Answer Controller (`src/controllers/answer.controller.js`)
 
 - Accepts the user's answers and compares them against the correct answers saved in the Quiz JSON.
 - For "Short Answer" text inputs, it performs fuzzy string matching or simple keyword checking to grant points without requiring a 100% exact character match.

@@ -47,11 +47,11 @@ export default function SidebarItem({
                          dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-100"
               onClick={(e) => e.stopPropagation()}
             />
-          ) : (
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+) : (
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-100 truncate">
               {truncate(item.title || item.question, 34)}
             </p>
-          )}
+)}
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 capitalize">
             {item.mode || "simple"}
             {item.createdAt
@@ -76,10 +76,10 @@ export default function SidebarItem({
             onClick={() => onDelete(item._id)}
             title="Delete"
           >
-            <Trash2 size={15} className="text-rose-600 dark:text-rose-300" />
+            <Trash2 size={15} className="text-red-500 dark:text-rose-300" />
           </button>
         </div>
       </div>
     </div>
-  );
+    );
 }

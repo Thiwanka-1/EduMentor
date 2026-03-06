@@ -18,7 +18,7 @@ export default function MvegExplain() {
 
   return (
     <section className="h-full flex flex-col min-w-0">
-      {/* ✅ Mode tabs always visible in explain route */}
+      {/*  Mode tabs always visible in explain route */}
       <div className="px-6 pt-5">
         <div className="max-w-4xl mx-auto flex justify-center">
           <ModeTabs mode={mode} setMode={setMode} />
@@ -29,7 +29,7 @@ export default function MvegExplain() {
         <div className="flex-1 min-w-0">
           <EmptyState onPick={onPickSample} />
         </div>
-      ) : (
+) : (
         <ExplanationCanvas
           active={active}
           loading={loading}
@@ -37,7 +37,7 @@ export default function MvegExplain() {
           onExportPdf={onExportPdf}
           onRegenerate={onRegenerate}
         />
-      )}
+)}
     </section>
-  );
+    );
 }
