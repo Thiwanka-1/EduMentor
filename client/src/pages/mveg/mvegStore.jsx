@@ -15,6 +15,7 @@ import {
 } from "../../services/mvegApi";
 import { copyToClipboard } from "../../utils/mvegClipboard";
 import { instructionMap } from "../../components/mveg/ModeTabs";
+import { exportMvegPdf } from "../../utils/mvegPdf";
 
 const MvegCtx = createContext(null);
 
@@ -243,7 +244,38 @@ export function MvegProvider({ children }) {
     }
   }, [active]);
 
-  const onExportPdf = () => setToast("PDF export: connect later");
+  const onExportPdf = () => {
+    if (!active?.question) {
+      setToast("Nothing to export");
+      return;
+    }
+
+    const title = active?.title || active?.question || "MVEG Explanation";
+    const answer =
+      active?.answer || active?.views?.[mode] || active?.views?.simple || "";
+
+    const complexityLabel =
+      complexity <= 30
+        ? "Novice"
+        : complexity <= 70
+          ? "Undergraduate"
+          : "Advanced";
+
+    exportMvegPdf({
+      title,
+      question: active.question,
+      answer,
+      meta: {
+        mode,
+        strict,
+        module,
+        complexity,
+        complexityLabel,
+      },
+    });
+
+    setToast("PDF downloaded");
+  };
 
   const onRegenerate = () => {
     if (!active?.question) return;
