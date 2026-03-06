@@ -156,3 +156,7 @@ export async function renameExplanation(id, title) {
     body: JSON.stringify({ title }),
   });
 }
+
+export async function getRelatedConcepts(explanationId) {
+  return request(`/api/explanations/${explanationId}/related`);
+}

@@ -1,24 +1,51 @@
-import React, { useMemo, useState } from "react";
-import { HelpCircle, Sparkles, Wand2 } from "lucide-react";
-import { extractKeyTerms } from "../../utils/mvegText";
+import React, { useEffect, useMemo, useState } from "react";
+import { Sparkles, Wand2 } from "lucide-react";
 import { useMveg } from "../../pages/mveg/mvegStore";
+import { getRelatedConcepts } from "../../services/mvegApi";
 
 export default function StudyTools({ answerText, drawer = false }) {
-  const { strict, setStrict } = useMveg();
+  const { strict, setStrict, active, setInput } = useMveg();
   const [level, setLevel] = useState(55);
 
-  const terms = useMemo(
-    () => extractKeyTerms(answerText || "", 6),
-    [answerText],
-  );
+  const [related, setRelated] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
-  const related = [
-    "UDP vs TCP",
-    "OSI Model Layers",
-    "Socket Programming",
-    "Time Complexity",
-    "Encapsulation vs Abstraction",
-  ];
+  // ✅ Fetch related when active explanation changes
+  useEffect(() => {
+    const id = active?._id;
+    if (!id) {
+      setRelated([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      setLoadingRelated(true);
+      try {
+        const res = await getRelatedConcepts(id);
+        if (!cancelled)
+          setRelated(Array.isArray(res.related) ? res.related : []);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setRelated([]);
+      } finally {
+        if (!cancelled) setLoadingRelated(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active?._id]);
+
+  const relatedDisplay = useMemo(() => {
+    if (loadingRelated) return ["Loading related topics…"];
+    if (related.length) return related;
+    return active?._id
+      ? ["No related topics found."]
+      : ["Generate an explanation to see related topics."];
+  }, [loadingRelated, related, active?._id]);
 
   return (
     <aside
@@ -28,7 +55,6 @@ export default function StudyTools({ answerText, drawer = false }) {
         drawer ? "w-full border-l-0" : "",
       ].join(" ")}
     >
-      {/* Header */}
       <h3 className="text-xs tracking-widest font-semibold text-slate-500 mb-3">
         STUDY TOOLS
       </h3>
@@ -47,6 +73,7 @@ export default function StudyTools({ answerText, drawer = false }) {
                 "w-12 h-6 rounded-full transition relative",
                 strict ? "bg-slate-900" : "bg-slate-300",
               ].join(" ")}
+              aria-label="Toggle strict syllabus"
             >
               <span
                 className={[
@@ -88,24 +115,6 @@ export default function StudyTools({ answerText, drawer = false }) {
           </div>
         </Card>
 
-        {/* Key Terms */}
-        <Card>
-          <p className="text-sm font-semibold text-slate-800">Key Terms</p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(terms.length ? terms : ["syllabus", "context", "concept"]).map(
-              (t) => (
-                <span
-                  key={t}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-100 text-slate-700"
-                >
-                  #{t}
-                </span>
-              ),
-            )}
-          </div>
-        </Card>
-
         {/* Quiz */}
         <Card>
           <div className="flex items-center gap-2">
@@ -124,49 +133,50 @@ export default function StudyTools({ answerText, drawer = false }) {
           </button>
         </Card>
 
-        {/* Ask Follow-up */}
-        <Card>
-          <div className="flex items-center gap-2">
-            <HelpCircle size={16} />
-            <p className="text-sm font-semibold text-slate-800">
-              Ask Follow-up
-            </p>
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <input
-              className="flex-1 h-10 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-              placeholder="Type a question…"
-            />
-            <button className="h-10 px-3 rounded-lg bg-slate-900 text-white">
-              →
-            </button>
-          </div>
-        </Card>
-
-        {/* Related */}
+        {/* Related Concepts (dynamic) */}
         <Card>
           <p className="text-sm font-semibold text-slate-800">
             Related Concepts
           </p>
 
-          <div className="mt-2 space-y-2">
-            {related.map((r) => (
-              <div
+          <div className="mt-3 space-y-2">
+            {relatedDisplay.map((r) => (
+              <button
                 key={r}
-                className="text-sm text-slate-700 hover:underline cursor-pointer"
+                disabled={
+                  loadingRelated ||
+                  !active?._id ||
+                  r.includes("Loading") ||
+                  r.includes("No related") ||
+                  r.includes("Generate")
+                }
+                onClick={() => {
+                  // ✅ UX: click a related topic -> put it into input box
+                  setInput(r);
+                }}
+                className={[
+                  "w-full text-left text-sm rounded-lg px-3 py-2 transition",
+                  loadingRelated || !active?._id
+                    ? "text-slate-500"
+                    : "text-slate-700 hover:bg-slate-100",
+                ].join(" ")}
               >
                 {r}
-              </div>
+              </button>
             ))}
           </div>
+
+          {active?._id && !loadingRelated && related.length > 0 && (
+            <p className="mt-3 text-xs text-slate-500">
+              Tip: click a topic to place it in the input box.
+            </p>
+          )}
         </Card>
       </div>
     </aside>
   );
 }
 
-/* Reusable Card */
 function Card({ children }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

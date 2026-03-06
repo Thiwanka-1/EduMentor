@@ -5,6 +5,7 @@ import connectDB from "./src/config/db.js";
 
 import chatRoutes from "./src/routes/chat.routes.js";
 import explanationRoutes from "./src/routes/explanations.routes.js";
+import studyToolsRoutes from "./src/routes/studytools.routes.js";
 
 // Load environment variables
 dotenv.config();
@@ -21,10 +22,10 @@ app.get("/", (req, res) => {
   res.send("API running 🚀");
 });
 
-// API Routes
+// MVEG Routes
 app.use("/api", chatRoutes);
 app.use("/api", explanationRoutes);
-
+app.use("/api", studyToolsRoutes);
 // Port
 const PORT = process.env.PORT || 5000;
 
