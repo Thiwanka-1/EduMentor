@@ -12,6 +12,13 @@ export default function ExplanationCanvas({
 }) {
   const navigate = useNavigate();
 
+  // current displayed answer (supports new multi-view + old records)
+  const currentAnswer =
+    active?.answer ||
+    active?.views?.[active?.mode || "simple"] ||
+    active?.views?.simple ||
+    "";
+
   return (
     <div className="h-full flex flex-col px-6 py-8 bg-slate-50">
       <div className="max-w-4xl w-full mx-auto pb-[120px]">
@@ -35,7 +42,7 @@ export default function ExplanationCanvas({
                   navigate("/tutor", {
                     state: {
                       question: active?.question || "",
-                      explanation: active?.answer || "",
+                      explanation: currentAnswer,
                     },
                   })
                 }
@@ -57,7 +64,7 @@ export default function ExplanationCanvas({
                 <div className="h-4 w-5/6 bg-slate-200 rounded" />
               </div>
             ) : (
-              <MarkdownView text={active?.answer || ""} />
+              <MarkdownView text={currentAnswer} />
             )}
           </div>
         </div>

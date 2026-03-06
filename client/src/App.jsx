@@ -9,7 +9,7 @@ import ChatPage from "./pages/StudyBuddy/ChatPage";
 import MvegLayout from "./pages/mveg/MvegLayout";
 import MvegExplain from "./pages/mveg/MvegExplain";
 import MvegLibrary from "./pages/mveg/MvegLibrary";
-import MvegTools from "./pages/mveg/MvegTools";
+//import MvegTools from "./pages/mveg/MvegTools";
 
 // ACE pages
 import AceLayout from "./pages/ace/AceLayout";
@@ -58,7 +58,6 @@ export default function App() {
         <Route index element={<Navigate to="/mveg/explain" replace />} />
         <Route path="explain" element={<MvegExplain />} />
         <Route path="library" element={<MvegLibrary />} />
-        <Route path="tools" element={<MvegTools />} />
       </Route>
 
       {/* ACE module */}

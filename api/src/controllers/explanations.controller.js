@@ -6,7 +6,7 @@ export async function listExplanations(req, res) {
     const items = await Explanation.find()
       .sort({ createdAt: -1 })
       .limit(200)
-      .select("_id question mode title answer createdAt");
+      .select("_id question mode title answer views createdAt strict");
 
     res.json(items);
   } catch (err) {
@@ -19,7 +19,7 @@ export async function listExplanations(req, res) {
 export async function getExplanation(req, res) {
   try {
     const item = await Explanation.findById(req.params.id).select(
-      "_id question mode title answer createdAt"
+      "_id question mode title answer views createdAt strict",
     );
 
     if (!item) return res.status(404).json({ error: "Not found" });
@@ -53,7 +53,7 @@ export async function renameExplanation(req, res) {
     const updated = await Explanation.findByIdAndUpdate(
       req.params.id,
       { title: title.trim() },
-      { new: true }
+      { new: true },
     ).select("_id title");
 
     if (!updated) {
