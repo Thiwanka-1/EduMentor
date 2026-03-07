@@ -23,10 +23,13 @@ function normalizeExplanation(item) {
 export async function listExplanations() {
   try {
     // Axios puts the response body inside the .data property
-    const res = await api.get("/explanations");
+    const res = await api.get("mveg/explanations");
     return Array.isArray(res.data) ? res.data.map(normalizeExplanation) : [];
   } catch (error) {
-    console.warn("Failed to fetch explanations, falling back to mock data.", error.message);
+    console.warn(
+      "Failed to fetch explanations, falling back to mock data.",
+      error.message,
+    );
     // fallback mock
     return MOCK_EXPLANATIONS.map((x) => ({
       _id: x._id,
@@ -50,10 +53,13 @@ export async function listExplanations() {
 -----------------------------------*/
 export async function getExplanation(id, mode = "simple") {
   try {
-    const res = await api.get(`/explanations/${id}`);
+    const res = await api.get(`mveg/explanations/${id}`);
     return normalizeExplanation(res.data);
   } catch (error) {
-    console.warn(`Failed to fetch explanation ${id}, falling back to mock data.`, error.message);
+    console.warn(
+      `Failed to fetch explanation ${id}, falling back to mock data.`,
+      error.message,
+    );
     const mock = MOCK_EXPLANATIONS.find((x) => x._id === id);
     if (!mock) throw new Error("Not found");
 
@@ -88,7 +94,13 @@ export async function generateExplanation({
   complexity = 55,
 }) {
   try {
-    const res = await api.post("/chat", { message, mode, strict, module, complexity });
+    const res = await api.post("mveg/chat", {
+      message,
+      mode,
+      strict,
+      module,
+      complexity,
+    });
     const data = res.data;
 
     return {
@@ -99,7 +111,10 @@ export async function generateExplanation({
       answer: data.answer || data.content || "",
     };
   } catch (error) {
-    console.warn("Failed to generate explanation, falling back to mock data.", error.message);
+    console.warn(
+      "Failed to generate explanation, falling back to mock data.",
+      error.message,
+    );
     // optional mock generation fallback
     const mock =
       MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
@@ -130,7 +145,7 @@ export async function generateExplanation({
 -----------------------------------*/
 export async function deleteExplanation(id) {
   try {
-    const res = await api.delete(`/explanations/${id}`);
+    const res = await api.delete(`mveg/explanations/${id}`);
     return res.data;
   } catch {
     return { ok: true };
@@ -141,7 +156,7 @@ export async function deleteExplanation(id) {
    RENAME EXPLANATION
 -----------------------------------*/
 export async function renameExplanation(id, title) {
-  const res = await api.patch(`/explanations/${id}/title`, { title });
+  const res = await api.patch(`mveg/explanations/${id}/title`, { title });
   return res.data;
 }
 
@@ -149,6 +164,6 @@ export async function renameExplanation(id, title) {
    RELATED CONCEPTS
 -----------------------------------*/
 export async function getRelatedConcepts(explanationId) {
-  const res = await api.get(`/explanations/${explanationId}/related`);
+  const res = await api.get(`mveg/explanations/${explanationId}/related`);
   return res.data;
 }

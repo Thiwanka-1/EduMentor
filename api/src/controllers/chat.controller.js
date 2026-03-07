@@ -117,8 +117,7 @@ Rules:
 }
 
 /* =========================
-   Build base prompt (strict/non-strict)
-   ✅ now uses module + complexity
+   Build base prompt
 ========================= */
 async function buildBasePrompt({
   message,
@@ -146,7 +145,6 @@ Keep the answer academically useful, clear, and syllabus-friendly.
     };
   }
 
-  // ✅ STRICT MODE -> module-wise retrieval
   const retrievalRes = await fetch("http://localhost:8001/retrieve", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -193,7 +191,7 @@ ${context || "(No context available)"}
 }
 
 /* =========================
-   Generate view
+   Generate one view
 ========================= */
 async function generateForMode({ message, strict, mode, basePrompt }) {
   const styleInstruction = MODE_INSTRUCTIONS[mode] || MODE_INSTRUCTIONS.simple;
@@ -235,6 +233,10 @@ export async function generateAndSave(req, res) {
       complexity = 55,
     } = req.body;
 
+    if (!req.user?._id) {
+      return res.status(401).json({ error: "Not authorized" });
+    }
+
     if (!message || !String(message).trim()) {
       return res.status(400).json({ error: "Message required" });
     }
@@ -242,7 +244,6 @@ export async function generateAndSave(req, res) {
     const cleanMessage = String(message).trim();
     const selectedMode = normalizeMode(mode);
 
-    // ✅ Domain guard
     const ruleCheck = evaluateAcademicScope(cleanMessage);
     let allowed = ruleCheck.allowed;
 
@@ -270,7 +271,6 @@ export async function generateAndSave(req, res) {
       });
     }
 
-    // ✅ Build prompt base with strict + module + complexity
     const basePrompt = await buildBasePrompt({
       message: cleanMessage,
       strict: Boolean(strict),
@@ -278,7 +278,6 @@ export async function generateAndSave(req, res) {
       complexity,
     });
 
-    // ✅ Generate selected view first
     const selectedAnswer = await generateForMode({
       message: cleanMessage,
       strict: Boolean(strict),
@@ -286,8 +285,8 @@ export async function generateAndSave(req, res) {
       basePrompt,
     });
 
-    // ✅ Generate other views
     const remainingModes = ALL_MODES.filter((m) => m !== selectedMode);
+
     const remainingResults = await Promise.all(
       remainingModes.map(async (m) => {
         const content = await generateForMode({
@@ -312,15 +311,17 @@ export async function generateAndSave(req, res) {
       views[m] = content;
     }
 
-    // ✅ Save one document with all views
     const doc = await Explanation.create({
+      user: req.user._id, // ✅ save under logged-in user
       question: cleanMessage,
       title: generateTitle(cleanMessage),
       mode: selectedMode,
       instruction: MODE_INSTRUCTIONS[selectedMode],
-      answer: selectedAnswer, // backward-compatible
+      answer: selectedAnswer,
       views,
       strict: Boolean(strict),
+      module,
+      complexity,
     });
 
     return res.json({

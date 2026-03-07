@@ -64,13 +64,12 @@ export default function App() {
       <Route path="/about" element={<Navigate to="/#about" replace />} />
       <Route path="/contact" element={<Navigate to="/#contact" replace />} />
 
-
       {/* ==========================================
           PROTECTED ROUTES (Must be logged in)
           ========================================== */}
       <Route element={<ProtectedRoute />}>
         <Route path="/profile" element={<ProfilePage />} />
-        
+
         {/* ✅ MVEG module */}
         <Route path="/mveg" element={<MvegLayout />}>
           <Route index element={<Navigate to="/mveg/explain" replace />} />

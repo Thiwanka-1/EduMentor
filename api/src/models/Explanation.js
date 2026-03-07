@@ -12,10 +12,17 @@ const ViewSchema = new mongoose.Schema(
 
 const ExplanationSchema = new mongoose.Schema(
   {
+    // ✅ owner of this explanation
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+
     question: { type: String, required: true, trim: true },
     title: { type: String, required: true },
 
-    // user-selected mode at generation time (for default display)
     mode: {
       type: String,
       enum: ["simple", "analogy", "code", "summary"],
@@ -24,18 +31,19 @@ const ExplanationSchema = new mongoose.Schema(
 
     instruction: String,
 
-    // backward compatibility (current frontend still uses answer)
     answer: { type: String, required: true },
 
-    // ✅ NEW: store all explanation views together
     views: {
       type: ViewSchema,
       required: true,
       default: () => ({}),
     },
 
-    // optional metadata
     strict: { type: Boolean, default: false },
+
+    // optional metadata
+    module: { type: String, default: "ALL" },
+    complexity: { type: Number, default: 55 },
   },
   { timestamps: true },
 );
