@@ -26,13 +26,18 @@ export default function Drawer({
       >
         {/* Header */}
         <div className="h-14 px-4 flex items-center justify-between border-b border-slate-200 bg-white">
-          <div className="text-sm font-semibold text-slate-900">
-            {title || (side === "left" ? "Menu" : "Study Tools")}
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-500 text-white grid place-items-center font-extrabold shadow-sm">
+              M
+            </div>
+            <div className="text-sm font-semibold text-slate-900">
+              {title || (side === "left" ? "Menu" : "Study Tools")}
+            </div>
           </div>
 
           <button
             onClick={onClose}
-            className="h-9 w-9 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition grid place-items-center"
+            className="h-9 w-9 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition grid place-items-center"
             aria-label="Close"
           >
             <X size={18} className="text-slate-700" />

@@ -45,8 +45,15 @@ function InnerLayout() {
   }, [tab, active]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="h-screen flex min-h-0">
+    <div className="min-h-screen text-slate-900 bg-slate-50">
+      {/* Background glows like Home */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] rounded-full bg-indigo-400/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-cyan-400/10 blur-[120px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_25%,transparent_100%)]" />
+      </div>
+
+      <div className="relative z-10 h-screen flex min-h-0">
         {/* Desktop left sidebar */}
         <div className="hidden lg:flex min-h-0">
           <Sidebar
@@ -85,21 +92,25 @@ function InnerLayout() {
               </div>
 
               {/* Bottom input dock */}
-              <div className="absolute left-0 right-0 bottom-0 border-t border-slate-200 bg-white shadow-sm">
+              <div className="absolute left-0 right-0 bottom-0 border-t border-slate-200 bg-white/95 backdrop-blur shadow-sm">
                 <form
                   onSubmit={onSubmit}
                   className="max-w-4xl mx-auto px-4 py-4"
                 >
-                  <div className="rounded-2xl border border-slate-300 bg-white p-3 flex items-center gap-3 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 flex items-center gap-3 shadow-sm">
                     <input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      className="flex-1 h-12 rounded-xl bg-white border border-slate-300 px-4 text-sm outline-none focus:ring-2 focus:ring-slate-400 focus:border-slate-400 transition"
+                      className="flex-1 h-12 rounded-xl bg-white border border-slate-200 px-4 text-sm outline-none
+                                 focus:ring-2 focus:ring-indigo-200 focus:border-indigo-200 transition"
                       placeholder="Ask a concept… (Press Enter to generate)"
                     />
                     <button
                       disabled={loading}
-                      className="h-12 px-6 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition disabled:opacity-60"
+                      className="h-12 px-6 rounded-xl text-white font-bold
+                                 bg-gradient-to-r from-indigo-600 to-cyan-500
+                                 hover:from-indigo-500 hover:to-cyan-400 transition
+                                 disabled:opacity-60 shadow-sm"
                     >
                       {loading ? "Generating..." : "Generate"}
                     </button>

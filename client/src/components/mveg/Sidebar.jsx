@@ -1,8 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { Plus, Search, Sparkles, LayoutGrid, BookOpen } from "lucide-react";
+import { Plus, Search, Sparkles, LayoutGrid } from "lucide-react";
 import SidebarItem from "./SidebarItem";
 
-/* Date helpers */
 function isToday(date) {
   const d = new Date(date);
   const now = new Date();
@@ -39,7 +38,6 @@ export default function Sidebar({
 
   const grouped = useMemo(() => {
     const term = q.trim().toLowerCase();
-
     const filtered = term
       ? items.filter((x) => {
           const t = (x.title || "").toLowerCase();
@@ -71,25 +69,30 @@ export default function Sidebar({
     >
       {/* Header */}
       <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-xl bg-slate-900 text-white grid place-items-center font-bold">
-          M
+        <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-600 via-violet-500 to-cyan-400 text-white grid place-items-center shadow-sm">
+          <span className="text-sm font-extrabold">M</span>
         </div>
-        <div>
-          <div className="text-sm font-bold text-slate-900">MVEG</div>
-          <div className="text-xs text-slate-500">Multi-View Explanation</div>
+        <div className="min-w-0">
+          <div className="text-sm font-extrabold text-slate-900">MVEG</div>
+          <div className="text-xs text-slate-500 truncate">
+            Multi-View Explanation
+          </div>
         </div>
       </div>
 
       {/* New Button */}
       <button
         onClick={onNew}
-        className="h-11 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-2"
+        className="h-11 rounded-xl text-white font-bold
+                   bg-gradient-to-r from-indigo-600 to-cyan-500
+                   hover:from-indigo-500 hover:to-cyan-400 transition
+                   flex items-center justify-center gap-2 shadow-sm"
       >
         <Plus size={16} /> New Explanation
       </button>
 
       {/* Search */}
-      <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-slate-50 px-3 h-10">
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 h-10">
         <Search size={16} className="text-slate-500" />
         <input
           value={q}
@@ -115,7 +118,7 @@ export default function Sidebar({
         />
       </div>
 
-      {/* Library Scroll */}
+      {/* Library */}
       <div className="flex-1 min-h-0 flex flex-col mt-2">
         <div className="text-xs tracking-widest text-slate-500 font-semibold mb-2">
           MY EXPLANATIONS
@@ -177,21 +180,19 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Footer */}
       <div className="text-xs text-slate-500 pt-2">EduMentor • MVEG Module</div>
     </aside>
   );
 }
 
-/* Navigation Button */
 function NavButton({ active, onClick, icon, label }) {
   return (
     <button
       onClick={onClick}
       className={[
-        "h-10 rounded-xl px-3 flex items-center gap-2 text-sm transition",
+        "h-10 rounded-xl px-3 flex items-center gap-2 text-sm font-semibold transition",
         active
-          ? "bg-slate-900 text-white"
+          ? "bg-indigo-50 text-indigo-700 border border-indigo-100"
           : "hover:bg-slate-100 text-slate-700",
       ].join(" ")}
     >
@@ -201,7 +202,6 @@ function NavButton({ active, onClick, icon, label }) {
   );
 }
 
-/* Section */
 function Section({ title, children }) {
   return (
     <div>
