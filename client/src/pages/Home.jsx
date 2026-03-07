@@ -38,11 +38,9 @@ function ModuleCard({ title, desc, tag, accent = "indigo", to }) {
             {tag}
           </span>
         </div>
-        
+
         <div className="min-w-0">
-          <h3 className="text-xl font-bold text-slate-900 mb-2">
-            {title}
-          </h3>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
           <p className="text-sm leading-relaxed text-slate-600 mb-6 min-h-[60px]">
             {desc}
           </p>
@@ -77,21 +75,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)]" />
       </div>
 
-      <main className="relative z-10 pt-24">
-        
+      <main className="relative z-10 pt-28">
         {/* Hero Section */}
-        <section className="w-full px-5 lg:px-8 pt-12 lg:pt-20 pb-16">
-          <div className="mx-auto max-w-7xl grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <section className="w-full px-3 sm:px-4 lg:px-5 xl:px-6 pt-12 lg:pt-20 pb-16">
+          <div className="mx-auto max-w-screen-2xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left Content */}
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 mb-6 shadow-sm">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-                </span>
-                Prototype-focused • PP1 ready UI
-              </div>
-
               <h1 className="text-5xl sm:text-6xl xl:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
                 Learn faster with a{" "}
                 <span className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
@@ -100,8 +89,8 @@ export default function Home() {
               </h1>
 
               <p className="mt-6 text-lg sm:text-xl leading-relaxed text-slate-600 max-w-xl font-medium">
-                EduMentor combines a StudyBuddy Agent, Multi-View Explanations, a
-                3D Avatar Tutor, and an Adaptive Reinforcement Engine—built to
+                EduMentor combines a StudyBuddy Agent, Multi-View Explanations,
+                a 3D Avatar Tutor, and an Adaptive Reinforcement Engine—built to
                 guide university students from confusion to mastery.
               </p>
 
@@ -126,7 +115,10 @@ export default function Home() {
                   { k: "Multi-View", v: "Explain" },
                   { k: "Adaptive", v: "Reinforce" },
                 ].map((s) => (
-                  <div key={s.v} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center">
+                  <div
+                    key={s.v}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center"
+                  >
                     <p className="text-2xl font-black text-slate-900">{s.k}</p>
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-1">
                       {s.v}
@@ -144,9 +136,11 @@ export default function Home() {
                   <span className="w-3 h-3 rounded-full bg-rose-400" />
                   <span className="w-3 h-3 rounded-full bg-amber-400" />
                   <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                  <span className="ml-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Live UI Preview</span>
+                  <span className="ml-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Live UI Preview
+                  </span>
                 </div>
-                
+
                 {/* Replace src with your actual video or image path */}
                 <video
                   src="/demo.mp4"
@@ -162,8 +156,11 @@ export default function Home() {
         </section>
 
         {/* Modules Section */}
-        <section id="modules" className="w-full bg-white border-y border-slate-200 py-20 px-5 lg:px-8">
-          <div className="mx-auto max-w-7xl">
+        <section
+          id="modules"
+          className="w-full bg-white border-y border-slate-200 py-20 px-3 sm:px-4 lg:px-5 xl:px-6"
+        >
+          <div className="mx-auto max-w-screen-2xl">
             <div className="max-w-2xl">
               <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-indigo-600 mb-3">
                 Core Modules
@@ -172,7 +169,8 @@ export default function Home() {
                 One platform, four powerful engines
               </h2>
               <p className="text-lg text-slate-600">
-                Consistent UI, shared theme, and scalable structure. Ready to connect to the backend.
+                Consistent UI, shared theme, and scalable structure. Ready to
+                connect to the backend.
               </p>
             </div>
 
@@ -210,9 +208,11 @@ export default function Home() {
         </section>
 
         {/* About & Contact Section */}
-        <section id="about" className="w-full px-5 lg:px-8 py-20">
-          <div className="mx-auto max-w-7xl grid md:grid-cols-2 gap-8">
-            
+        <section
+          id="about"
+          className="w-full px-3 sm:px-4 lg:px-5 xl:px-6 py-20"
+        >
+          <div className="mx-auto max-w-screen-2xl grid md:grid-cols-2 gap-8">
             <div className="rounded-[32px] border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/50">
               <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-indigo-600 mb-3">
                 About
@@ -221,13 +221,17 @@ export default function Home() {
                 Built for real student pain points
               </h3>
               <p className="text-lg text-slate-600 leading-relaxed">
-                EduMentor is a research-driven learning platform focused on clarity,
-                personalization, and retention. The design aims to be demo-friendly
-                (PP1) while staying scalable for full integration later.
+                EduMentor is a research-driven learning platform focused on
+                clarity, personalization, and retention. The design aims to be
+                demo-friendly (PP1) while staying scalable for full integration
+                later.
               </p>
             </div>
 
-            <div id="contact" className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-indigo-900 to-slate-900 p-10 shadow-xl shadow-indigo-900/20 text-white">
+            <div
+              id="contact"
+              className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-indigo-900 to-slate-900 p-10 shadow-xl shadow-indigo-900/20 text-white"
+            >
               <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-cyan-400 mb-3">
                 Contact
               </p>
@@ -235,7 +239,8 @@ export default function Home() {
                 Need a prototype review?
               </h3>
               <p className="text-lg text-indigo-200 mb-8">
-                Email us anytime to schedule a demo or discuss integration details.
+                Email us anytime to schedule a demo or discuss integration
+                details.
               </p>
               <a
                 href="mailto:edumentor.team@gmail.com"
@@ -244,14 +249,13 @@ export default function Home() {
                 edumentor.team@gmail.com →
               </a>
             </div>
-
           </div>
         </section>
       </main>
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-5 lg:px-8 py-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-5 xl:px-6 py-10 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-400" />
             <p className="text-lg font-bold text-slate-900">EduMentor</p>
