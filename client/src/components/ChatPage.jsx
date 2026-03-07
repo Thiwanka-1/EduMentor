@@ -1,6 +1,6 @@
 // client/src/pages/ChatPage.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { api } from "../lib/api.js";
+import { api } from "../services/api.js";
 import { getUserId, setUserId, resetUserId } from "../lib/user.js";
 
 // Components
