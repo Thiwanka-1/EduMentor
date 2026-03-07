@@ -1,24 +1,20 @@
-// src/services/api.js
+import { api } from "./api"; // <-- Import your new centralized Axios instance
 import { MOCK_EXPLANATIONS } from "./mockMveg";
 
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+// helper: normalize item shape for old/new backend + mock
+function normalizeExplanation(item) {
+  if (!item) return item;
 
-async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const views = item.views || null;
+  const mode = item.mode || "simple";
 
-  if (!res.ok) {
-    const err = new Error("API error");
-    err.status = res.status;
-    throw err;
-  }
-
-  return res.json();
+  return {
+    ...item,
+    mode,
+    views,
+    // keep backward compatibility
+    answer: item.answer || (views ? views[mode] || views.simple || "" : ""),
+  };
 }
 
 /* ----------------------------------
@@ -26,14 +22,25 @@ async function request(path, options = {}) {
 -----------------------------------*/
 export async function listExplanations() {
   try {
-    return await request("/api/explanations");
-  } catch {
-    // 🔁 fallback
+    // Axios puts the response body inside the .data property
+    const res = await api.get("/explanations");
+    return Array.isArray(res.data) ? res.data.map(normalizeExplanation) : [];
+  } catch (error) {
+    console.warn("Failed to fetch explanations, falling back to mock data.", error.message);
+    // fallback mock
     return MOCK_EXPLANATIONS.map((x) => ({
       _id: x._id,
       question: x.question,
       title: x.title,
+      mode: x.mode || "simple",
       createdAt: x.createdAt,
+      views: {
+        simple: x.answers?.simple || "",
+        analogy: x.answers?.analogy || "",
+        code: x.answers?.code || "",
+        summary: x.answers?.summary || "",
+      },
+      answer: x.answers?.[x.mode || "simple"] || x.answers?.simple || "",
     }));
   }
 }
@@ -43,38 +50,78 @@ export async function listExplanations() {
 -----------------------------------*/
 export async function getExplanation(id, mode = "simple") {
   try {
-    return await request(`/api/explanations/${id}`);
-  } catch {
+    const res = await api.get(`/explanations/${id}`);
+    return normalizeExplanation(res.data);
+  } catch (error) {
+    console.warn(`Failed to fetch explanation ${id}, falling back to mock data.`, error.message);
     const mock = MOCK_EXPLANATIONS.find((x) => x._id === id);
     if (!mock) throw new Error("Not found");
+
+    const views = {
+      simple: mock.answers?.simple || "",
+      analogy: mock.answers?.analogy || "",
+      code: mock.answers?.code || "",
+      summary: mock.answers?.summary || "",
+    };
 
     return {
       _id: mock._id,
       question: mock.question,
       title: mock.title,
-      answer: mock.answers[mode] || mock.answers.simple,
       mode,
+      views,
+      answer: views[mode] || views.simple || "",
+      createdAt: mock.createdAt,
     };
   }
 }
 
 /* ----------------------------------
    GENERATE EXPLANATION
+   ✅ now supports: strict + module + complexity
 -----------------------------------*/
-export async function generateExplanation({ message, mode, strict }) {
+export async function generateExplanation({
+  message,
+  mode,
+  strict,
+  module = "ALL",
+  complexity = 55,
+}) {
   try {
-    return await request("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ message, mode, strict }),
-    });
-  } catch {
-    // // 🔁 mock generation
-    // const mock =
-    //   MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
-    // return {
-    //   id: mock._id,
-    //   content: mock.answers[mode] || mock.answers.simple,
-    // };
+    const res = await api.post("/chat", { message, mode, strict, module, complexity });
+    const data = res.data;
+
+    return {
+      ...data,
+      mode: data.mode || mode || "simple",
+      views: data.views || null,
+      content: data.content || data.answer || "",
+      answer: data.answer || data.content || "",
+    };
+  } catch (error) {
+    console.warn("Failed to generate explanation, falling back to mock data.", error.message);
+    // optional mock generation fallback
+    const mock =
+      MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
+
+    const views = {
+      simple: mock?.answers?.simple || "",
+      analogy: mock?.answers?.analogy || "",
+      code: mock?.answers?.code || "",
+      summary: mock?.answers?.summary || "",
+    };
+
+    return {
+      id: mock?._id || crypto.randomUUID?.() || String(Date.now()),
+      mode: mode || "simple",
+      content: views[mode] || views.simple || "",
+      answer: views[mode] || views.simple || "",
+      views,
+      question: message,
+      title: message.split(" ").slice(0, 6).join(" "),
+      createdAt: new Date().toISOString(),
+      outOfScope: false,
+    };
   }
 }
 
@@ -83,9 +130,9 @@ export async function generateExplanation({ message, mode, strict }) {
 -----------------------------------*/
 export async function deleteExplanation(id) {
   try {
-    return await request(`/api/explanations/${id}`, { method: "DELETE" });
+    const res = await api.delete(`/explanations/${id}`);
+    return res.data;
   } catch {
-    // silently succeed in prototype
     return { ok: true };
   }
 }
@@ -94,8 +141,14 @@ export async function deleteExplanation(id) {
    RENAME EXPLANATION
 -----------------------------------*/
 export async function renameExplanation(id, title) {
-  return request(`/api/explanations/${id}/title`, {
-    method: "PATCH",
-    body: JSON.stringify({ title }),
-  });
+  const res = await api.patch(`/explanations/${id}/title`, { title });
+  return res.data;
+}
+
+/* ----------------------------------
+   RELATED CONCEPTS
+-----------------------------------*/
+export async function getRelatedConcepts(explanationId) {
+  const res = await api.get(`/explanations/${explanationId}/related`);
+  return res.data;
 }

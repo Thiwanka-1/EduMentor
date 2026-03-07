@@ -15,8 +15,29 @@ import {
 } from "../../services/mvegApi";
 import { copyToClipboard } from "../../utils/mvegClipboard";
 import { instructionMap } from "../../components/mveg/ModeTabs";
+import { exportMvegPdf } from "../../utils/mvegPdf";
 
 const MvegCtx = createContext(null);
+
+const VIEW_KEYS = ["simple", "analogy", "code", "summary"];
+
+function normalizeViews(views = {}) {
+  return {
+    simple: views?.simple || "",
+    analogy: views?.analogy || "",
+    code: views?.code || "",
+    summary: views?.summary || "",
+  };
+}
+
+function hasAllViews(item) {
+  return !!(
+    item?.views &&
+    VIEW_KEYS.every(
+      (k) => typeof item.views[k] === "string" && item.views[k].length > 0,
+    )
+  );
+}
 
 export function MvegProvider({ children }) {
   const [items, setItems] = useState([]);
@@ -24,9 +45,15 @@ export function MvegProvider({ children }) {
 
   const [input, setInput] = useState("");
   const [mode, setMode] = useState("simple");
-  const [strict, setStrict] = useState(true);
-  const [loading, setLoading] = useState(false);
 
+  // ✅ strict syllabus (RAG)
+  const [strict, setStrict] = useState(true);
+
+  // ✅ NEW: module + complexity (global)
+  const [module, setModule] = useState("ALL");
+  const [complexity, setComplexity] = useState(55);
+
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
   // mobile drawers
@@ -45,6 +72,29 @@ export function MvegProvider({ children }) {
     })();
   }, []);
 
+  // ✅ Instant switching (no regen)
+  useEffect(() => {
+    if (!active?.views) return;
+
+    const nextAnswer =
+      active.views?.[mode] ||
+      active.views?.[active.mode] ||
+      active.views?.simple ||
+      active.answer ||
+      "";
+
+    if (nextAnswer && nextAnswer !== active.answer) {
+      setActive((prev) =>
+        prev
+          ? {
+              ...prev,
+              answer: nextAnswer,
+            }
+          : prev,
+      );
+    }
+  }, [mode, active]);
+
   const onNew = () => {
     setActive(null);
     setInput("");
@@ -54,15 +104,31 @@ export function MvegProvider({ children }) {
 
   const onSelect = async (item) => {
     let picked = item;
-    if (!item.answer) {
+
+    if (!item?.answer || !item?.views) {
       try {
-        picked = await getExplanation(item._id);
+        picked = await getExplanation(item._id, item.mode || "simple");
       } catch {
         picked = item;
       }
     }
-    setActive(picked);
-    setMode(picked.mode || "simple"); // ✅ auto-set mode from saved item
+
+    const initialMode = picked.mode || "simple";
+    const normalizedViews = picked.views ? normalizeViews(picked.views) : null;
+
+    const finalPicked = {
+      ...picked,
+      views: normalizedViews,
+      answer:
+        (normalizedViews &&
+          (normalizedViews[initialMode] || normalizedViews.simple)) ||
+        picked.answer ||
+        "",
+      mode: initialMode,
+    };
+
+    setActive(finalPicked);
+    setMode(initialMode);
     setLeftOpen(false);
   };
 
@@ -86,7 +152,6 @@ export function MvegProvider({ children }) {
       await renameExplanation(id, title);
 
       setItems((prev) => prev.map((x) => (x._id === id ? { ...x, title } : x)));
-
       setActive((a) => (a?._id === id ? { ...a, title } : a));
     } catch {
       setToast("Rename failed");
@@ -103,24 +168,60 @@ export function MvegProvider({ children }) {
 
       setLoading(true);
       try {
-        const { content, id } = await generateExplanation({
+        const res = await generateExplanation({
           message: msg,
           instruction: instructionMap[mode],
           mode,
           strict,
+
+          // ✅ send new controls
+          module,
+          complexity,
         });
 
+        // out-of-scope handling
+        if (res?.outOfScope) {
+          setActive({
+            _id: null,
+            question: res.question || msg,
+            title: res.title || "Out of scope request",
+            mode: mode || "simple",
+            views: res.views ? normalizeViews(res.views) : null,
+            answer: res.content || res.answer || "",
+            createdAt: res.createdAt || new Date().toISOString(),
+            outOfScope: true,
+          });
+          setToast("Please ask a CS/SE/IT academic question");
+          return;
+        }
+
+        const selectedMode = res.mode || mode || "simple";
+        const views = res.views ? normalizeViews(res.views) : null;
+
+        const selectedAnswer =
+          (views && (views[selectedMode] || views.simple)) ||
+          res.content ||
+          res.answer ||
+          "";
+
         const newItem = {
-          _id: id,
-          question: msg,
-          title: msg.split(" ").slice(0, 6).join(" "),
-          mode,
-          answer: content,
-          createdAt: new Date().toISOString(),
+          _id: res.id,
+          question: res.question || msg,
+          title: res.title || msg.split(" ").slice(0, 6).join(" "),
+          mode: selectedMode,
+          views,
+          answer: selectedAnswer,
+          strict,
+          module,
+          complexity,
+          createdAt: res.createdAt || new Date().toISOString(),
+          outOfScope: false,
         };
 
         setItems((prev) => [newItem, ...prev]);
         setActive(newItem);
+        setMode(selectedMode);
+
         setInput("");
         setToast("Generated");
       } catch (err) {
@@ -130,7 +231,7 @@ export function MvegProvider({ children }) {
         setLoading(false);
       }
     },
-    [input, mode, strict, loading]
+    [input, mode, strict, module, complexity, loading],
   );
 
   const onCopy = useCallback(async () => {
@@ -143,7 +244,38 @@ export function MvegProvider({ children }) {
     }
   }, [active]);
 
-  const onExportPdf = () => setToast("PDF export: connect later");
+  const onExportPdf = () => {
+    if (!active?.question) {
+      setToast("Nothing to export");
+      return;
+    }
+
+    const title = active?.title || active?.question || "MVEG Explanation";
+    const answer =
+      active?.answer || active?.views?.[mode] || active?.views?.simple || "";
+
+    const complexityLabel =
+      complexity <= 30
+        ? "Novice"
+        : complexity <= 70
+          ? "Undergraduate"
+          : "Advanced";
+
+    exportMvegPdf({
+      title,
+      question: active.question,
+      answer,
+      meta: {
+        mode,
+        strict,
+        module,
+        complexity,
+        complexityLabel,
+      },
+    });
+
+    setToast("PDF downloaded");
+  };
 
   const onRegenerate = () => {
     if (!active?.question) return;
@@ -157,16 +289,28 @@ export function MvegProvider({ children }) {
       setItems,
       active,
       setActive,
+
       input,
       setInput,
+
       mode,
       setMode,
+
       strict,
       setStrict,
+
+      // ✅ expose controls to StudyTools
+      module,
+      setModule,
+      complexity,
+      setComplexity,
+
       loading,
       setLoading,
+
       toast,
       setToast,
+
       leftOpen,
       setLeftOpen,
       rightOpen,
@@ -181,19 +325,24 @@ export function MvegProvider({ children }) {
       onCopy,
       onExportPdf,
       onRegenerate,
+
+      hasActiveAllViews: hasAllViews(active),
     }),
     [
       items,
       active,
       input,
       mode,
+      strict,
+      module,
+      complexity,
       loading,
       toast,
       leftOpen,
       rightOpen,
       onSubmit,
       onCopy,
-    ]
+    ],
   );
 
   return <MvegCtx.Provider value={value}>{children}</MvegCtx.Provider>;

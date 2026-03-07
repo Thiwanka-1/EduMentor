@@ -1,24 +1,71 @@
-import React, { useMemo, useState } from "react";
-import { HelpCircle, Sparkles, Wand2 } from "lucide-react";
-import { extractKeyTerms } from "../../utils/mvegText";
+import React, { useEffect, useMemo, useState } from "react";
+import { Sparkles, Wand2 } from "lucide-react";
 import { useMveg } from "../../pages/mveg/mvegStore";
+import { getRelatedConcepts } from "../../services/mvegApi";
+
+const MODULES = ["ALL", "AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
+
+function complexityLabel(level = 55) {
+  if (level <= 30) return "Novice";
+  if (level <= 70) return "Undergraduate";
+  return "Advanced";
+}
 
 export default function StudyTools({ answerText, drawer = false }) {
-  const { strict, setStrict } = useMveg();
-  const [level, setLevel] = useState(55);
+  const {
+    strict,
+    setStrict,
+    active,
+    setInput,
 
-  const terms = useMemo(
-    () => extractKeyTerms(answerText || "", 6),
-    [answerText],
-  );
+    // ✅ new global controls
+    module,
+    setModule,
+    complexity,
+    setComplexity,
+  } = useMveg();
 
-  const related = [
-    "UDP vs TCP",
-    "OSI Model Layers",
-    "Socket Programming",
-    "Time Complexity",
-    "Encapsulation vs Abstraction",
-  ];
+  const [related, setRelated] = useState([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
+
+  // ✅ Fetch related when active explanation changes
+  useEffect(() => {
+    const id = active?._id;
+    if (!id) {
+      setRelated([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      setLoadingRelated(true);
+      try {
+        const res = await getRelatedConcepts(id);
+        if (!cancelled)
+          setRelated(Array.isArray(res.related) ? res.related : []);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) setRelated([]);
+      } finally {
+        if (!cancelled) setLoadingRelated(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [active?._id]);
+
+  const relatedDisplay = useMemo(() => {
+    if (loadingRelated) return ["Loading related topics…"];
+    if (related.length) return related;
+    return active?._id
+      ? ["No related topics found."]
+      : ["Generate an explanation to see related topics."];
+  }, [loadingRelated, related, active?._id]);
+
+  const label = complexityLabel(complexity);
 
   return (
     <aside
@@ -28,7 +75,6 @@ export default function StudyTools({ answerText, drawer = false }) {
         drawer ? "w-full border-l-0" : "",
       ].join(" ")}
     >
-      {/* Header */}
       <h3 className="text-xs tracking-widest font-semibold text-slate-500 mb-3">
         STUDY TOOLS
       </h3>
@@ -47,6 +93,7 @@ export default function StudyTools({ answerText, drawer = false }) {
                 "w-12 h-6 rounded-full transition relative",
                 strict ? "bg-slate-900" : "bg-slate-300",
               ].join(" ")}
+              aria-label="Toggle strict syllabus"
             >
               <span
                 className={[
@@ -58,18 +105,47 @@ export default function StudyTools({ answerText, drawer = false }) {
           </div>
 
           <p className="mt-2 text-xs text-slate-600">
-            When enabled, explanations prioritize uploaded slides and textbooks.
+            When enabled, answers are generated ONLY from your uploaded lecture
+            materials (RAG retrieval).
           </p>
+
+          {/* ✅ Module dropdown only active when strict ON */}
+          <div className="mt-4">
+            <label className="text-xs font-semibold text-slate-600">
+              Active Module
+            </label>
+            <select
+              value={module}
+              onChange={(e) => setModule(e.target.value)}
+              disabled={!strict}
+              className={[
+                "mt-2 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm bg-white",
+                strict ? "text-slate-800" : "text-slate-400 bg-slate-50",
+              ].join(" ")}
+            >
+              {MODULES.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+
+            {!strict && (
+              <p className="mt-2 text-xs text-slate-500">
+                Enable Strict Syllabus to filter retrieval by module.
+              </p>
+            )}
+          </div>
         </Card>
 
-        {/* Complexity */}
+        {/* ✅ Complexity */}
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-slate-800">
               Complexity Level
             </p>
             <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
-              Undergraduate
+              {label}
             </span>
           </div>
 
@@ -77,36 +153,22 @@ export default function StudyTools({ answerText, drawer = false }) {
             type="range"
             min="0"
             max="100"
-            value={level}
-            onChange={(e) => setLevel(Number(e.target.value))}
+            value={complexity}
+            onChange={(e) => setComplexity(Number(e.target.value))}
             className="w-full mt-3 accent-slate-900"
           />
 
           <div className="flex justify-between text-xs text-slate-500 mt-1">
             <span>Novice</span>
-            <span>Expert</span>
+            <span>Advanced</span>
           </div>
+
+          <p className="mt-2 text-xs text-slate-600">
+            Controls explanation depth (used in both Normal + Strict mode).
+          </p>
         </Card>
 
-        {/* Key Terms */}
-        <Card>
-          <p className="text-sm font-semibold text-slate-800">Key Terms</p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(terms.length ? terms : ["syllabus", "context", "concept"]).map(
-              (t) => (
-                <span
-                  key={t}
-                  className="text-xs px-2 py-1 rounded-lg border border-slate-200 bg-slate-100 text-slate-700"
-                >
-                  #{t}
-                </span>
-              ),
-            )}
-          </div>
-        </Card>
-
-        {/* Quiz */}
+        {/* Quiz (placeholder) */}
         <Card>
           <div className="flex items-center gap-2">
             <Sparkles size={16} />
@@ -124,49 +186,47 @@ export default function StudyTools({ answerText, drawer = false }) {
           </button>
         </Card>
 
-        {/* Ask Follow-up */}
-        <Card>
-          <div className="flex items-center gap-2">
-            <HelpCircle size={16} />
-            <p className="text-sm font-semibold text-slate-800">
-              Ask Follow-up
-            </p>
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            <input
-              className="flex-1 h-10 rounded-lg border border-slate-300 px-3 text-sm outline-none focus:ring-2 focus:ring-slate-300"
-              placeholder="Type a question…"
-            />
-            <button className="h-10 px-3 rounded-lg bg-slate-900 text-white">
-              →
-            </button>
-          </div>
-        </Card>
-
-        {/* Related */}
+        {/* Related Concepts (dynamic) */}
         <Card>
           <p className="text-sm font-semibold text-slate-800">
             Related Concepts
           </p>
 
-          <div className="mt-2 space-y-2">
-            {related.map((r) => (
-              <div
+          <div className="mt-3 space-y-2">
+            {relatedDisplay.map((r) => (
+              <button
                 key={r}
-                className="text-sm text-slate-700 hover:underline cursor-pointer"
+                disabled={
+                  loadingRelated ||
+                  !active?._id ||
+                  r.includes("Loading") ||
+                  r.includes("No related") ||
+                  r.includes("Generate")
+                }
+                onClick={() => setInput(r)}
+                className={[
+                  "w-full text-left text-sm rounded-lg px-3 py-2 transition",
+                  loadingRelated || !active?._id
+                    ? "text-slate-500"
+                    : "text-slate-700 hover:bg-slate-100",
+                ].join(" ")}
               >
                 {r}
-              </div>
+              </button>
             ))}
           </div>
+
+          {active?._id && !loadingRelated && related.length > 0 && (
+            <p className="mt-3 text-xs text-slate-500">
+              Tip: click a topic to place it in the input box.
+            </p>
+          )}
         </Card>
       </div>
     </aside>
   );
 }
 
-/* Reusable Card */
 function Card({ children }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
