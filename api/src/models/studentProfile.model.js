@@ -1,8 +1,4 @@
-// StudentProfile Model — Friend Component data model
-// Stores weak/strong topics and other student metadata.
-// Already used by the Friend component; defined here for
-// ACE to read/update weakTopics and strongTopics.
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const examSchema = new mongoose.Schema(
   {
@@ -11,7 +7,7 @@ const examSchema = new mongoose.Schema(
     note: { type: String, default: "" },
   },
   { _id: false },
-  );
+);
 
 const studentProfileSchema = new mongoose.Schema(
   {
@@ -28,6 +24,6 @@ const studentProfileSchema = new mongoose.Schema(
     upcomingExams: { type: [examSchema], default: [] },
   },
   { timestamps: true },
-  );
+);
 
-module.exports = mongoose.model("StudentProfile", studentProfileSchema);
+export default mongoose.model("StudentProfile", studentProfileSchema);

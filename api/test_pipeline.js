@@ -1,8 +1,11 @@
-// Pipeline test — run with: node test_pipeline.js
-// Tests: upload → extract → prompt → quiz generation
-require("dotenv").config();
+import dotenv from "dotenv";
+import path from "path";
 
-const path = require("path");
+// Importing functions
+import { saveMaterial } from "./src/services/materialStore.js";
+import { buildQuizPrompt } from "./src/utils/promptBuilder.js";
+import { generate } from "./src/services/ollama.service.js";
+import { sanitizeJSON } from "./src/utils/jsonSanitizer.js";
 
 async function testPipeline() {
   const BASE = "http://localhost:5050";
@@ -20,11 +23,9 @@ async function testPipeline() {
   console.log(
     "   Ollama is running. Model available:",
     health.ollama.modelAvailable,
-    );
+  );
 
   console.log("\n Step 2: Saving test study material...");
-  const { saveMaterial } = require("./src/services/materialStore");
-
   const testText = `Chapter 1: The Water Cycle
 
 The water cycle (hydrological cycle) describes the continuous movement of water on Earth.
@@ -47,12 +48,11 @@ The sun is the primary energy source driving the water cycle. It is critical for
       },
     ],
     testText,
-    );
+  );
   console.log("   Material saved. ID:", materialId);
   console.log("  Text length:", testText.length, "chars");
 
   console.log("\n Step 3: Building prompt...");
-  const { buildQuizPrompt } = require("./src/utils/promptBuilder");
   const prompt = buildQuizPrompt({
     studyText: testText,
     questionType: "multiple_choice",
@@ -66,15 +66,12 @@ The sun is the primary energy source driving the water cycle. It is critical for
   console.log("   END OF PROMPT \n");
 
   console.log(" Step 4: Sending to Ollama (wait 1-3 minutes)...");
-  const { generate } = require("./src/services/ollama.service");
-
   const raw = await generate(prompt);
   console.log("\n   RAW OLLAMA RESPONSE ");
   console.log(raw);
   console.log("   END RESPONSE \n");
 
   console.log(" Step 5: Parsing JSON...");
-  const { sanitizeJSON } = require("./src/utils/jsonSanitizer");
   const parsed = sanitizeJSON(raw);
   const questions = parsed.questions || parsed;
 
@@ -89,7 +86,7 @@ The sun is the primary energy source driving the water cycle. It is critical for
 
   console.log(
     `\n PIPELINE TEST PASSED! Generated ${questions.length} questions.`,
-    );
+  );
 }
 
 testPipeline().catch((err) => {

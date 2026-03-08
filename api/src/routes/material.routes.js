@@ -1,16 +1,9 @@
-// Material Routes  — Protected with Auth
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
-
-const {
-  uploadMaterial,
-  listAllMaterials,
-  getMaterialById,
-  removeMaterial,
-} = require("../controllers/material.controller");
-const { protect } = require("../middleware/auth.middleware");
+import express from "express";
+import multer from "multer";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
+import { uploadMaterial, listAllMaterials, getMaterialById, removeMaterial } from "../controllers/material.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -39,9 +32,9 @@ const fileFilter = (_req, file, cb) => {
     cb(
       new Error(
         `Unsupported file type: ${file.mimetype}. Allowed: PDF, DOCX, PNG, JPG`,
-        ),
+      ),
       false,
-      );
+    );
   }
 };
 
@@ -75,4 +68,4 @@ router.use((err, _req, res, next) => {
   next(err);
 });
 
-module.exports = router;
+export default router;

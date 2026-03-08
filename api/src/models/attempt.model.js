@@ -1,5 +1,4 @@
-// Attempt Model — MongoDB Schema
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const attemptAnswerSchema = new mongoose.Schema(
   {
@@ -16,7 +15,7 @@ const attemptAnswerSchema = new mongoose.Schema(
     feedback: String,
   },
   { _id: false },
-  );
+);
 
 const attemptSchema = new mongoose.Schema(
   {
@@ -53,11 +52,11 @@ const attemptSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Index for fetching attempts by quiz and user
 attemptSchema.index({ quizId: 1 });
 attemptSchema.index({ userId: 1 });
 attemptSchema.index({ submittedAt: -1 });
 
-module.exports = mongoose.model("Attempt", attemptSchema);
+export default mongoose.model("Attempt", attemptSchema);

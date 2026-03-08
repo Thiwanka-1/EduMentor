@@ -1,13 +1,8 @@
-// Reinforce Routes — Adaptive Concept Reinforcement Engine
-const express = require("express");
+import express from "express";
+import { protect } from "../middleware/auth.middleware.js";
+import { getWeakTopics, generateReinforcementQuiz, submitReinforcementAnswers, getProgress } from "../controllers/reinforce.controller.js";
+
 const router = express.Router();
-const { protect } = require("../middleware/auth.middleware");
-const {
-  getWeakTopics,
-  generateReinforcementQuiz,
-  submitReinforcementAnswers,
-  getProgress,
-} = require("../controllers/reinforce.controller");
 
 // All reinforcement routes are protected (require login)
 router.use(protect);
@@ -24,4 +19,4 @@ router.post("/submit", submitReinforcementAnswers);
 // GET  /api/reinforce/progress — all topic progress for user
 router.get("/progress", getProgress);
 
-module.exports = router;
+export default router;

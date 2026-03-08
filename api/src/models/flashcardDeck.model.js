@@ -1,5 +1,4 @@
-// FlashcardDeck Model — MongoDB Schema
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const cardSchema = new mongoose.Schema(
   {
@@ -13,7 +12,7 @@ const cardSchema = new mongoose.Schema(
     },
   },
   { _id: false },
-  );
+);
 
 const flashcardDeckSchema = new mongoose.Schema(
   {
@@ -49,10 +48,10 @@ const flashcardDeckSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Indexes
 flashcardDeckSchema.index({ userId: 1 });
 flashcardDeckSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("FlashcardDeck", flashcardDeckSchema);
+export default mongoose.model("FlashcardDeck", flashcardDeckSchema);

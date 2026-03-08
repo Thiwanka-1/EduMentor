@@ -1,19 +1,18 @@
-// JWT Auth Middleware
-const jwt = require("jsonwebtoken");
-const User = require("../models/user.model");
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
 /**
  * Protect routes — requires valid JWT token.
  * Sets req.user with the authenticated user document.
  */
-async function protect(req, res, next) {
+export async function protect(req, res, next) {
   try {
     let token;
 
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
-) {
+    ) {
       token = req.headers.authorization.split(" ")[1];
     }
 
@@ -26,8 +25,8 @@ async function protect(req, res, next) {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || "edumentor_secret_key_2024",
-      );
+      process.env.JWT_SECRET || "edumentor_secret_key_2024"
+    );
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -51,21 +50,21 @@ async function protect(req, res, next) {
 /**
  * Optional auth — attaches user if token present, but doesn't block.
  */
-async function optionalAuth(req, _res, next) {
+export async function optionalAuth(req, _res, next) {
   try {
     let token;
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
-) {
+    ) {
       token = req.headers.authorization.split(" ")[1];
     }
 
     if (token) {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_SECRET || "edumentor_secret_key_2024",
-        );
+        process.env.JWT_SECRET || "edumentor_secret_key_2024"
+      );
       req.user = await User.findById(decoded.id);
     }
   } catch (_) {
@@ -73,5 +72,3 @@ async function optionalAuth(req, _res, next) {
   }
   next();
 }
-
-module.exports = { protect, optionalAuth };

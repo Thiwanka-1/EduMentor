@@ -1,5 +1,4 @@
-// Material Model — MongoDB Schema
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const materialSchema = new mongoose.Schema(
   {
@@ -36,9 +35,9 @@ const materialSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Index for sorting by upload date
 materialSchema.index({ uploadedAt: -1 });
 
-module.exports = mongoose.model("Material", materialSchema);
+export default mongoose.model("Material", materialSchema);

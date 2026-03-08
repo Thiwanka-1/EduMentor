@@ -1,14 +1,4 @@
-// JSON Sanitizer
-// Extracts valid JSON from raw Ollama output.
-// Handles: markdown fences, preamble text, truncated arrays,
-// trailing garbage, and partially-generated responses.
-
-/**
- * Extract and parse a JSON object from raw LLM output.
- * @param {string} raw – raw text from Ollama
- * @returns {Object} parsed quiz JSON
- */
-function sanitizeJSON(raw) {
+export function sanitizeJSON(raw) {
   if (!raw || typeof raw !== "string") {
     throw new Error("Empty response from AI model");
   }
@@ -72,7 +62,7 @@ function sanitizeJSON(raw) {
             validateQuizShape(parsed);
             console.log(
               "   JSON parsed successfully (pass 2 — truncation recovery)",
-              );
+            );
             return parsed;
           } catch (_) {
             // try next position
@@ -117,7 +107,7 @@ function sanitizeJSON(raw) {
     if (objectBlocks.length > 0) {
       console.log(
         `   JSON rescued via object extraction (pass 4): ${objectBlocks.length} question(s)`,
-        );
+      );
       return { questions: objectBlocks };
     }
   } catch (e4) {
@@ -129,14 +119,14 @@ function sanitizeJSON(raw) {
 
   throw new Error(
     "The AI model returned an unexpected format. Please click Regenerate to try again.",
-    );
+  );
 }
 
 /**
  * Verify the parsed object has the expected shape.
  * Throws if the questions array is missing or empty.
  */
-function validateQuizShape(parsed) {
+export function validateQuizShape(parsed) {
   const questions = parsed.questions || parsed;
   if (!Array.isArray(questions) || questions.length === 0) {
     throw new Error("No questions array found in parsed JSON");
@@ -148,5 +138,3 @@ function validateQuizShape(parsed) {
     }
   }
 }
-
-module.exports = { sanitizeJSON };

@@ -1,6 +1,4 @@
-// TopicProgress Model — Tracks reinforcement progress per topic
-// Part of the Adaptive Concept Reinforcement Engine (ACE)
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const topicProgressSchema = new mongoose.Schema(
   {
@@ -38,9 +36,9 @@ const topicProgressSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Compound index: one progress record per user + topic
 topicProgressSchema.index({ userId: 1, topic: 1 }, { unique: true });
 
-module.exports = mongoose.model("TopicProgress", topicProgressSchema);
+export default mongoose.model("TopicProgress", topicProgressSchema);
