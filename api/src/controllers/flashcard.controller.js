@@ -1,10 +1,7 @@
-// Flashcard Controller
-// Handles flashcard generation (PDF / text), listing, and retrieval
-// Reuses: ollama.service, fileParser, jsonSanitizer
-const path = require("path");
-const FlashcardDeck = require("../models/flashcardDeck.model");
-const { generate } = require("../services/ollama.service");
-const { extractText } = require("../utils/fileParser");
+import path from "path";
+import FlashcardDeck from "../models/flashcardDeck.model.js";
+import { generate } from "../services/ollama.service.js";
+import { extractText } from "../utils/fileParser.js";
 
 const MAX_TEXT_CHARS = 1500;
 
@@ -90,7 +87,7 @@ function parseFlashcardJSON(raw) {
         validateFlashcards(cards);
         console.log(
           "   Flashcard JSON parsed successfully (pass 2 — object wrapper)",
-          );
+        );
         return cards;
       }
     } catch (e2) {
@@ -117,7 +114,7 @@ function parseFlashcardJSON(raw) {
     if (objectBlocks.length > 0) {
       console.log(
         `   Flashcard JSON rescued via object extraction (pass 3): ${objectBlocks.length} card(s)`,
-        );
+      );
       return objectBlocks;
     }
   } catch (e3) {
@@ -129,7 +126,7 @@ function parseFlashcardJSON(raw) {
 
   throw new Error(
     "The AI model returned an unexpected format. Please click Generate to try again.",
-    );
+  );
 }
 
 /**
@@ -146,16 +143,14 @@ function validateFlashcards(cards) {
 // POST /api/flashcards/generate
 // Body (text mode):  { text, deckName? }
 // Body (PDF mode):   multipart file upload + deckName?
-async function generateFlashcards(req, res, next) {
+export async function generateFlashcards(req, res, next) {
   try {
     let textContent = "";
     let sourceType = "text";
 
     if (req.file) {
       // PDF / file upload via multer (single file)
-      console.log(
-        `\n Generating flashcards from file: ${req.file.originalname}`,
-        );
+      console.log(`\n Generating flashcards from file: ${req.file.originalname}`);
       textContent = await extractText(req.file.path);
       sourceType = "pdf";
     } else if (req.body.text) {
@@ -186,9 +181,7 @@ async function generateFlashcards(req, res, next) {
       console.log(`    Text truncated to ${MAX_TEXT_CHARS} chars`);
     }
 
-    console.log(
-      `   Text length: ${textContent.length.toLocaleString()} chars`,
-      );
+    console.log(`   Text length: ${textContent.length.toLocaleString()} chars`);
 
     const prompt = buildFlashcardPrompt(textContent);
     const rawResponse = await generate(prompt);
@@ -221,8 +214,8 @@ async function generateFlashcards(req, res, next) {
     await deck.save();
 
     console.log(
-      `   Flashcard deck saved: ${deck._id} (${cleanedCards.length} cards)`,
-      );
+      `   Flashcard deck saved: ${deck._id} (${cleanedCards.length} cards)`
+    );
 
     res.json({
       success: true,
@@ -240,7 +233,7 @@ async function generateFlashcards(req, res, next) {
 
 // GET /api/flashcards
 // List all decks for the authenticated user
-async function listDecks(req, res, next) {
+export async function listDecks(req, res, next) {
   try {
     const decks = await FlashcardDeck.aggregate([
       { $match: { userId: req.user._id } },
@@ -276,7 +269,7 @@ async function listDecks(req, res, next) {
 
 // GET /api/flashcards/:deckId
 // Return full deck with cards for study mode
-async function getDeckById(req, res, next) {
+export async function getDeckById(req, res, next) {
   try {
     const deck = await FlashcardDeck.findOne({
       _id: req.params.deckId,
@@ -307,7 +300,7 @@ async function getDeckById(req, res, next) {
 
 // PUT /api/flashcards/:deckId
 // Update deck name, description, tags, or cards
-async function updateDeck(req, res, next) {
+export async function updateDeck(req, res, next) {
   try {
     const { deckName, description, tags, cards } = req.body;
 
@@ -347,7 +340,7 @@ async function updateDeck(req, res, next) {
 
 // DELETE /api/flashcards/:deckId
 // Delete a deck
-async function deleteDeck(req, res, next) {
+export async function deleteDeck(req, res, next) {
   try {
     const deck = await FlashcardDeck.findOneAndDelete({
       _id: req.params.deckId,
@@ -363,11 +356,3 @@ async function deleteDeck(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  generateFlashcards,
-  listDecks,
-  getDeckById,
-  updateDeck,
-  deleteDeck,
-};

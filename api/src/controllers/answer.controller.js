@@ -1,7 +1,5 @@
-// Answer Controller  — MongoDB Atlas Version
-// Handles quiz submission, scoring, and feedback
-const Quiz = require("../models/quiz.model");
-const Attempt = require("../models/attempt.model");
+import Quiz from "../models/quiz.model.js";
+import Attempt from "../models/attempt.model.js";
 
 /**
  * POST /api/answers/submit
@@ -9,7 +7,7 @@ const Attempt = require("../models/attempt.model");
  *
  * Returns scored results with per-question feedback.
  */
-async function submitAnswers(req, res, next) {
+export async function submitAnswers(req, res, next) {
   try {
     const { quizId, answers, userId } = req.body;
 
@@ -36,8 +34,8 @@ async function submitAnswers(req, res, next) {
 
     for (const ans of answers) {
       const question = quiz.questions.find(
-        (q) => q.id === ans.questionId || q.id === parseInt(ans.questionId),
-        );
+        (q) => q.id === ans.questionId || q.id === parseInt(ans.questionId)
+      );
 
       if (!question) {
         results.push({
@@ -81,8 +79,8 @@ async function submitAnswers(req, res, next) {
 
     await attempt.save();
     console.log(
-      `   Attempt saved to MongoDB: ${attempt._id} (Score: ${score}%)`,
-      );
+      `   Attempt saved to MongoDB: ${attempt._id} (Score: ${score}%)`
+    );
 
     res.json({
       success: true,
@@ -103,7 +101,7 @@ async function submitAnswers(req, res, next) {
  * GET /api/answers/results/:quizId
  * Get all attempts/results for a given quiz.
  */
-async function getResults(req, res, next) {
+export async function getResults(req, res, next) {
   try {
     const attempts = await Attempt.find({ quizId: req.params.quizId })
       .populate("userId", "name email")
@@ -134,7 +132,7 @@ async function getResults(req, res, next) {
  * GET /api/attempts/:quizId
  * Alias — get student attempts for a quiz.
  */
-async function getAttemptsByQuiz(req, res, next) {
+export async function getAttemptsByQuiz(req, res, next) {
   return getResults(req, res, next);
 }
 
@@ -142,7 +140,7 @@ async function getAttemptsByQuiz(req, res, next) {
  * GET /api/attempts/user/:userId
  * Get all attempts by a specific user.
  */
-async function getAttemptsByUser(req, res, next) {
+export async function getAttemptsByUser(req, res, next) {
   try {
     const attempts = await Attempt.find({ userId: req.params.userId })
       .populate({
@@ -169,7 +167,6 @@ async function getAttemptsByUser(req, res, next) {
     next(err);
   }
 }
-
 
 /**
  * Compare the user's answer against the correct answer.
@@ -225,7 +222,7 @@ function getGrade(score) {
   return "F";
 }
 
-module.exports = {
+export default {
   submitAnswers,
   getResults,
   getAttemptsByQuiz,

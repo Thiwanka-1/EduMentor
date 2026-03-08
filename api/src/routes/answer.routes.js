@@ -1,12 +1,6 @@
-// Answer / Attempt Routes  — Protected with Auth
-const express = require("express");
-const {
-  submitAnswers,
-  getResults,
-  getAttemptsByQuiz,
-  getAttemptsByUser,
-} = require("../controllers/answer.controller");
-const { protect } = require("../middleware/auth.middleware");
+import express from "express";
+import { submitAnswers, getResults, getAttemptsByQuiz, getAttemptsByUser } from "../controllers/answer.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -22,4 +16,4 @@ router.get("/attempts/:quizId", protect, getAttemptsByQuiz);
 // Get attempts by user — protected
 router.get("/user/:userId", protect, getAttemptsByUser);
 
-module.exports = router;
+export default router;

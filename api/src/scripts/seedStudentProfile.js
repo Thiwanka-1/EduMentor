@@ -1,12 +1,12 @@
-// Seed Script — Insert sample User + StudentProfile for testing ACE
-// Run:  node src/scripts/seedStudentProfile.js
-require("dotenv").config();
-const mongoose = require("mongoose");
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 
 // Load models
-const User = require("../models/user.model");
-const StudentProfile = require("../models/studentProfile.model");
-const TopicProgress = require("../models/topicProgress.model");
+import User from "../models/user.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
+import TopicProgress from "../models/topicProgress.model.js";
+
+dotenv.config();
 
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -29,7 +29,7 @@ async function seed() {
     if (user) {
       console.log(
         `    User "${TEST_USER.email}" already exists (id: ${user._id}).`,
-        );
+      );
       console.log("     Skipping user creation.\n");
     } else {
       user = await User.create(TEST_USER);
@@ -115,7 +115,7 @@ async function seed() {
     console.log(`     weakTopics   : ${profile.weakTopics.join(", ")}`);
     console.log(
       `     strongTopics : ${profile.strongTopics.length ? profile.strongTopics.join(", ") : "(none)"}`,
-      );
+    );
     console.log("");
 
     const progress = await TopicProgress.find({ userId }).lean();
@@ -123,7 +123,7 @@ async function seed() {
     for (const p of progress) {
       console.log(
         `     • ${p.topic}  — mastery: ${p.masteryScore}%, difficulty: ${p.difficulty}, attempts: ${p.attempts}`,
-        );
+      );
     }
 
     console.log("\n Seed complete! You can now log in with:");

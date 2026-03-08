@@ -1,20 +1,33 @@
-// EduMentor AI Quiz Generator  —  Express Server Entry Point
-// MongoDB Atlas Version
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-const fs = require("fs");
-const multer = require("multer");
-const { v4: uuidv4 } = require("uuid");
+import dotenv from "dotenv";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import fs from "fs";
+import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
 
 // MongoDB connection
-const connectDB = require("./src/config/db");
+import connectDB from "./src/config/db.js";
+
+// Import routes
+import materialRoutes from "./src/routes/material.routes.js";
+import quizRoutes from "./src/routes/quiz.routes.js";
+import answerRoutes from "./src/routes/answer.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
+import reinforceRoutes from "./src/routes/reinforce.routes.js";
+import flashcardRoutes from "./src/routes/flashcard.routes.js";
+import dashboardRoutes from "./src/routes/dashboard.routes.js";
+import analysisRoutes from "./src/routes/analysis.routes.js";
+
+// Initialize environment variables
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 
-const uploadsDir = path.resolve(process.env.UPLOAD_DIR || "./uploads");
+// Handle file paths with ES modules (import.meta.url)
+const uploadsDir = path.resolve("./uploads");
+
 [uploadsDir].forEach((d) => {
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
 });
@@ -37,15 +50,7 @@ app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
-const materialRoutes = require("./src/routes/material.routes");
-const quizRoutes = require("./src/routes/quiz.routes");
-const answerRoutes = require("./src/routes/answer.routes");
-const userRoutes = require("./src/routes/user.routes");
-const reinforceRoutes = require("./src/routes/reinforce.routes");
-const flashcardRoutes = require("./src/routes/flashcard.routes");
-const dashboardRoutes = require("./src/routes/dashboard.routes");
-const analysisRoutes = require("./src/routes/analysis.routes");
-
+// API Routes
 app.use("/api/materials", materialRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/quizzes", quizRoutes); // Alias: /api/quizzes → same router
@@ -57,15 +62,11 @@ app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analysis", analysisRoutes);
 
-// CONVENIENCE / ALIAS ROUTES  (used by original spec)
-// These map the spec URLs directly to the same controllers.
-const { uploadMaterial } = require("./src/controllers/material.controller");
-const {
-  generateQuiz,
-  regenerateQuiz,
-} = require("./src/controllers/quiz.controller");
-const { submitAnswers } = require("./src/controllers/answer.controller");
-const { protect } = require("./src/middleware/auth.middleware");
+// Import controllers
+import { uploadMaterial } from "./src/controllers/material.controller.js";
+import { generateQuiz, regenerateQuiz } from "./src/controllers/quiz.controller.js";
+import { submitAnswers } from "./src/controllers/answer.controller.js";
+import { protect } from "./src/middleware/auth.middleware.js";
 
 // Multer for the alias /upload-material route
 const aliasUpload = multer({
@@ -97,7 +98,7 @@ app.post(
   protect,
   aliasUpload.array("files", 10),
   uploadMaterial,
-  );
+);
 
 // POST /generate-quiz    → same as POST /api/quiz/generate (protected)
 app.post("/generate-quiz", protect, generateQuiz);
@@ -108,6 +109,7 @@ app.post("/submit-answers", protect, submitAnswers);
 // POST /regenerate       → same as POST /api/quiz/regenerate (protected)
 app.post("/regenerate", protect, regenerateQuiz);
 
+// Health check route
 app.get("/api/health", (_req, res) =>
   res.json({
     status: "ok",
@@ -115,8 +117,9 @@ app.get("/api/health", (_req, res) =>
     database: "MongoDB Atlas",
     timestamp: new Date().toISOString(),
   }),
-  );
+);
 
+// Global error handler
 app.use((err, _req, res, _next) => {
   console.error(" Error:", err.message);
 
@@ -144,8 +147,10 @@ app.use((err, _req, res, _next) => {
     .json({ success: false, error: err.message || "Internal Server Error" });
 });
 
-const { warmUp, checkHealth } = require("./src/services/ollama.service");
+// Import Ollama services
+import { warmUp, checkHealth } from "./src/services/ollama.service.js";
 
+// Start the server and connect to MongoDB
 app.listen(PORT, async () => {
   console.log("\n");
   console.log("       EduMentor AI Backend                 ");
@@ -153,7 +158,7 @@ app.listen(PORT, async () => {
   console.log(`  Server  : http://localhost:${PORT}`);
   console.log(
     `  Ollama  : ${process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434"}`,
-    );
+  );
   console.log(`  Model   : ${process.env.OLLAMA_MODEL || "llama3"}`);
 
   // Connect to MongoDB Atlas
@@ -179,7 +184,7 @@ app.listen(PORT, async () => {
   console.log("    POST /api/reinforce/generate-quiz — reinforcement quiz");
   console.log(
     "    POST /api/reinforce/submit        — submit & update mastery",
-    );
+  );
   console.log("    GET  /api/reinforce/progress      — topic progress");
   console.log("    POST /api/flashcards/generate     — generate flashcards");
   console.log("    GET  /api/flashcards              — list flashcard decks");

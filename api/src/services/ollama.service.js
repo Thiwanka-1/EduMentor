@@ -1,8 +1,8 @@
-// Ollama Service
-// Handles communication with the local Ollama API
+import fetch from "node-fetch"; // Node-fetch import if not already installed (use 'npm install node-fetch' in Node.js environment)
+import { v4 as uuidv4 } from "uuid";
 
 const OLLAMA_BASE = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "phi3";
 
 /**
  * Send a prompt to the Ollama /api/generate endpoint.
@@ -15,7 +15,7 @@ const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3";
  * @param {number} [options.maxRetries] – number of retries on timeout (default 2)
  * @returns {Promise<string>} the raw text response from the model
  */
-async function generate(prompt, options = {}) {
+export async function generate(prompt, options = {}) {
   const model = options.model || OLLAMA_MODEL;
   const timeoutMs = options.timeout || 10 * 60 * 1000; // 10 minutes (was 5)
   const maxRetries = options.maxRetries ?? 2;
@@ -31,9 +31,7 @@ async function generate(prompt, options = {}) {
       await sleep(3000);
     }
 
-    console.log(
-      `   Sending prompt to Ollama (${model})… [attempt ${attempt + 1}]`,
-      );
+    console.log(`   Sending prompt to Ollama (${model})… [attempt ${attempt + 1}]`);
     console.log(`   Prompt length: ${prompt.length.toLocaleString()} chars`);
 
     const controller = new AbortController();
@@ -61,9 +59,7 @@ async function generate(prompt, options = {}) {
 
       if (!res.ok) {
         const errorText = await res.text().catch(() => "");
-        throw new Error(
-          `Ollama returned ${res.status}: ${errorText || "Unknown error"}`,
-          );
+        throw new Error(`Ollama returned ${res.status}: ${errorText || "Unknown error"}`);
       }
 
       const data = await res.json();
@@ -72,18 +68,14 @@ async function generate(prompt, options = {}) {
         throw new Error("Ollama returned an empty response");
       }
 
-      console.log(
-        `   Response received (${data.response.length.toLocaleString()} chars)`,
-        );
+      console.log(`   Response received (${data.response.length.toLocaleString()} chars)`);
       return data.response;
     } catch (err) {
       clearTimeout(timer);
       lastError = err;
 
       if (err.name === "AbortError") {
-        console.warn(
-          `  ⏱  Attempt ${attempt + 1} timed out after ${timeoutMs / 1000}s`,
-          );
+        console.warn(`  ⏱  Attempt ${attempt + 1} timed out after ${timeoutMs / 1000}s`);
 
         // If we still have retries left, continue the loop
         if (attempt < maxRetries) {
@@ -97,20 +89,17 @@ async function generate(prompt, options = {}) {
             model +
             "`, " +
             "(3) Reduce the number of questions, " +
-            "(4) Try a smaller model like `mistral` or `tinyllama`.",
-            );
+            "(4) Try a smaller model like `mistral` or `tinyllama`."
+        );
       }
 
-      if (
-        err.cause?.code === "ECONNREFUSED" ||
-        err.message?.includes("ECONNREFUSED")
-) {
+      if (err.cause?.code === "ECONNREFUSED" || err.message?.includes("ECONNREFUSED")) {
         throw new Error(
           "Cannot connect to Ollama. Make sure Ollama is running:\n" +
             "  1. Open a terminal and run: ollama serve\n" +
             "  2. Then run: ollama pull " +
-            model,
-            );
+            model
+        );
       }
 
       // For other errors, don't retry – throw immediately
@@ -125,7 +114,7 @@ async function generate(prompt, options = {}) {
  * Pre-warm the Ollama model by sending a tiny prompt.
  * This loads the model into memory so subsequent requests are fast.
  */
-async function warmUp() {
+export async function warmUp() {
   const model = OLLAMA_MODEL;
   console.log(`   Warming up Ollama model "${model}"…`);
 
@@ -146,9 +135,7 @@ async function warmUp() {
       console.log(`   Model "${model}" is warm and ready!`);
     } else {
       const text = await res.text().catch(() => "");
-      console.warn(
-        `    Warm-up got status ${res.status}: ${text.slice(0, 100)}`,
-        );
+      console.warn(`    Warm-up got status ${res.status}: ${text.slice(0, 100)}`);
     }
   } catch (err) {
     console.warn(`    Could not warm up Ollama: ${err.message}`);
@@ -159,7 +146,7 @@ async function warmUp() {
 /**
  * Check if Ollama is reachable and the model is available.
  */
-async function checkHealth() {
+export async function checkHealth() {
   try {
     const res = await fetch(`${OLLAMA_BASE}/api/tags`);
     if (!res.ok) return { ok: false, error: `Ollama returned ${res.status}` };
@@ -182,5 +169,3 @@ async function checkHealth() {
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
-module.exports = { generate, checkHealth, warmUp };

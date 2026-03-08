@@ -1,9 +1,6 @@
-// Quiz Store  –  FILE-BACKED
-// Persists generated quizzes and results to disk so data
-// survives server restarts (node --watch).
-const fs = require("fs");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
+import fs from "fs";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 const QUIZ_DIR = path.resolve(__dirname, "..", "data", "quizzes");
 const RESULT_DIR = path.resolve(__dirname, "..", "data", "results");
@@ -23,7 +20,7 @@ function rPath(id) {
 /**
  * Save a generated quiz to disk.
  */
-function saveQuiz(materialId, config, questions) {
+export function saveQuiz(materialId, config, questions) {
   const id = uuidv4();
   const quiz = {
     id,
@@ -39,7 +36,7 @@ function saveQuiz(materialId, config, questions) {
 /**
  * Get quiz by ID.
  */
-function getQuiz(id) {
+export function getQuiz(id) {
   const fp = qPath(id);
   if (!fs.existsSync(fp)) return null;
   try {
@@ -52,7 +49,7 @@ function getQuiz(id) {
 /**
  * Get the most recent quiz for a material.
  */
-function getLatestQuizByMaterial(materialId) {
+export function getLatestQuizByMaterial(materialId) {
   try {
     const files = fs.readdirSync(QUIZ_DIR).filter((f) => f.endsWith(".json"));
     let latest = null;
@@ -73,7 +70,7 @@ function getLatestQuizByMaterial(materialId) {
 /**
  * Save quiz results (answers + scoring).
  */
-function saveResult(quizId, result) {
+export function saveResult(quizId, result) {
   const id = uuidv4();
   const entry = { id, quizId, ...result, createdAt: new Date().toISOString() };
   fs.writeFileSync(rPath(id), JSON.stringify(entry), "utf-8");
@@ -83,23 +80,15 @@ function saveResult(quizId, result) {
 /**
  * Get results for a specific quiz.
  */
-function getResultsByQuiz(quizId) {
+export function getResultsByQuiz(quizId) {
   try {
     const files = fs.readdirSync(RESULT_DIR).filter((f) => f.endsWith(".json"));
     return files
       .map((f) =>
         JSON.parse(fs.readFileSync(path.join(RESULT_DIR, f), "utf-8")),
-        )
+      )
       .filter((r) => r.quizId === quizId);
   } catch {
     return [];
   }
 }
-
-module.exports = {
-  saveQuiz,
-  getQuiz,
-  getLatestQuizByMaterial,
-  saveResult,
-  getResultsByQuiz,
-};

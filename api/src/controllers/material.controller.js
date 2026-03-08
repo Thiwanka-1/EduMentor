@@ -1,15 +1,13 @@
-// Material Controller  — MongoDB Atlas Version
-// Handles file upload + text extraction + MongoDB persistence
-const path = require("path");
-const fs = require("fs");
-const { extractFromMultipleFiles } = require("../utils/fileParser");
-const Material = require("../models/material.model");
+import path from "path";
+import fs from "fs";
+import { extractFromMultipleFiles } from "../utils/fileParser.js";
+import Material from "../models/material.model.js";
 
 /**
  * POST /api/materials/upload
  * Accept multiple files, extract text, save to MongoDB, return materialId.
  */
-async function uploadMaterial(req, res, next) {
+export async function uploadMaterial(req, res, next) {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -20,8 +18,8 @@ async function uploadMaterial(req, res, next) {
 
     console.log(`\n Received ${req.files.length} file(s):`);
     req.files.forEach((f) =>
-      console.log(`   • ${f.originalname} (${(f.size / 1024).toFixed(1)} KB)`),
-      );
+      console.log(`   • ${f.originalname} (${(f.size / 1024).toFixed(1)} KB)`)
+    );
 
     const firstFile = req.files[0];
 
@@ -33,8 +31,8 @@ async function uploadMaterial(req, res, next) {
 
     if (existing) {
       console.log(
-        `    Material already exists for "${firstFile.originalname}" — reusing ${existing._id}`,
-        );
+        `    Material already exists for "${firstFile.originalname}" — reusing ${existing._id}`
+      );
 
       // Clean up uploaded temp files since we won't use them
       req.files.forEach((f) => {
@@ -94,8 +92,8 @@ async function uploadMaterial(req, res, next) {
 
     console.log(`   Material saved to MongoDB: ${material._id}`);
     console.log(
-      `   Extracted text: ${extractedText.length.toLocaleString()} chars`,
-      );
+      `   Extracted text: ${extractedText.length.toLocaleString()} chars`
+    );
 
     // Clean up uploaded files from disk (text already in MongoDB)
     req.files.forEach((f) => {
@@ -133,7 +131,7 @@ async function uploadMaterial(req, res, next) {
  * GET /api/materials
  * List all stored materials (metadata only, no full text).
  */
-async function listAllMaterials(_req, res, next) {
+export async function listAllMaterials(_req, res, next) {
   try {
     const materials = await Material.find()
       .select("-textContent") // Exclude large text field
@@ -160,7 +158,7 @@ async function listAllMaterials(_req, res, next) {
  * GET /api/materials/:id
  * Retrieve a specific material.
  */
-async function getMaterialById(req, res, next) {
+export async function getMaterialById(req, res, next) {
   try {
     const material = await Material.findById(req.params.id).lean();
 
@@ -191,7 +189,7 @@ async function getMaterialById(req, res, next) {
 /**
  * DELETE /api/materials/:id
  */
-async function removeMaterial(req, res, next) {
+export async function removeMaterial(req, res, next) {
   try {
     const result = await Material.findByIdAndDelete(req.params.id);
     res.json({ success: true, deleted: !!result });
@@ -199,10 +197,3 @@ async function removeMaterial(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  uploadMaterial,
-  listAllMaterials,
-  getMaterialById,
-  removeMaterial,
-};

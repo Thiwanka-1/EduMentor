@@ -1,9 +1,6 @@
-// Material Store  –  FILE-BACKED
-// Persists extracted text to disk so data survives server restarts.
-// Each material is saved as a separate JSON file under ./data/materials/
-const fs = require("fs");
-const path = require("path");
-const { v4: uuidv4 } = require("uuid");
+import fs from "fs";
+import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
 const DATA_DIR = path.resolve(__dirname, "..", "data", "materials");
 
@@ -22,7 +19,7 @@ function filePath(id) {
 /**
  * Save extracted material to disk and return a materialId.
  */
-function saveMaterial(files, extractedText) {
+export function saveMaterial(files, extractedText) {
   const id = uuidv4();
   const entry = {
     id,
@@ -43,7 +40,7 @@ function saveMaterial(files, extractedText) {
 /**
  * Retrieve material by ID from disk.
  */
-function getMaterial(id) {
+export function getMaterial(id) {
   const fp = filePath(id);
   if (!fs.existsSync(fp)) return null;
 
@@ -59,7 +56,7 @@ function getMaterial(id) {
 /**
  * Delete material by ID.
  */
-function deleteMaterial(id) {
+export function deleteMaterial(id) {
   const fp = filePath(id);
   if (fs.existsSync(fp)) {
     fs.unlinkSync(fp);
@@ -71,7 +68,7 @@ function deleteMaterial(id) {
 /**
  * List all stored materials (metadata only, no full text).
  */
-function listMaterials() {
+export function listMaterials() {
   try {
     const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
     return files.map((f) => {
@@ -83,5 +80,3 @@ function listMaterials() {
     return [];
   }
 }
-
-module.exports = { saveMaterial, getMaterial, deleteMaterial, listMaterials };

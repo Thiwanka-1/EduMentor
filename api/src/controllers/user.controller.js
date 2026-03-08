@@ -1,7 +1,5 @@
-// User / Auth Controller
-// Handles registration, login, profile
-const jwt = require("jsonwebtoken");
-const User = require("../models/user.model");
+import jwt from "jsonwebtoken";
+import User from "../models/user.model.js";
 
 /**
  * Generate JWT token
@@ -11,14 +9,14 @@ function generateToken(id) {
     { id },
     process.env.JWT_SECRET || "edumentor_secret_key_2024",
     { expiresIn: "30d" },
-    );
+  );
 }
 
 /**
  * POST /api/users/register
  * Body: { name, email, password }
  */
-async function registerUser(req, res, next) {
+export async function registerUser(req, res, next) {
   try {
     const { name, email, password } = req.body;
 
@@ -62,7 +60,7 @@ async function registerUser(req, res, next) {
  * POST /api/users/login
  * Body: { email, password }
  */
-async function loginUser(req, res, next) {
+export async function loginUser(req, res, next) {
   try {
     const { email, password } = req.body;
 
@@ -109,7 +107,7 @@ async function loginUser(req, res, next) {
  * GET /api/users/profile
  * Protected — requires auth
  */
-async function getProfile(req, res) {
+export async function getProfile(req, res) {
   res.json({
     success: true,
     user: {
@@ -128,7 +126,7 @@ async function getProfile(req, res) {
  * PUT /api/users/profile
  * Protected — update name, email
  */
-async function updateProfile(req, res, next) {
+export async function updateProfile(req, res, next) {
   try {
     const { name, email } = req.body;
 
@@ -159,5 +157,3 @@ async function updateProfile(req, res, next) {
     next(err);
   }
 }
-
-module.exports = { registerUser, loginUser, getProfile, updateProfile };

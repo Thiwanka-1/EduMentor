@@ -1,10 +1,4 @@
-// Prompt Builder Utility
-// Builds a clean, minimal prompt that llama3 reliably follows
-
-/**
- * Build a quiz-generation prompt for Ollama.
- */
-function buildQuizPrompt({ studyText, questionType, difficulty, quantity }) {
+export function buildQuizPrompt({ studyText, questionType, difficulty, quantity }) {
   // AGGRESSIVE SPEED OPTIMIZATION:
   // Short context = much faster local reading and generation times
   const MAX_CHARS = 1000;
@@ -55,7 +49,7 @@ function buildExample(type) {
         },
         null,
         2,
-        );
+      );
 
     case "short_answer":
       return JSON.stringify(
@@ -73,7 +67,7 @@ function buildExample(type) {
         },
         null,
         2,
-        );
+      );
 
     case "mixed":
       return JSON.stringify(
@@ -104,7 +98,7 @@ function buildExample(type) {
         },
         null,
         2,
-        );
+      );
 
     case "multiple_choice":
     default:
@@ -129,7 +123,7 @@ function buildExample(type) {
         },
         null,
         2,
-        );
+      );
   }
 }
 
@@ -157,5 +151,3 @@ function formatType(type) {
   };
   return map[type] || type;
 }
-
-module.exports = { buildQuizPrompt };

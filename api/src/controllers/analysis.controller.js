@@ -1,7 +1,6 @@
-// Analysis Controller — Progress Analysis page data
-const Attempt = require("../models/attempt.model");
-const TopicProgress = require("../models/topicProgress.model");
-const StudentProfile = require("../models/studentProfile.model");
+import Attempt from "../models/attempt.model.js";
+import TopicProgress from "../models/topicProgress.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
 
 /**
  * GET /api/analysis/progress
@@ -9,7 +8,7 @@ const StudentProfile = require("../models/studentProfile.model");
  *
  * Response:
  * {
- *   masteryScore,         // average mastery across all topics
+ *   masteryScore,         // average mastery across all user topics
  *   totalQuestions,       // total questions ever answered
  *   streak,               // consecutive days of activity
  *   performanceTrend,     // weekly accuracy data for chart
@@ -18,7 +17,7 @@ const StudentProfile = require("../models/studentProfile.model");
  *   recommendation        // recommended action (top 2 weak topics)
  * }
  */
-async function getProgressAnalysis(req, res, next) {
+export async function getProgressAnalysis(req, res, next) {
   try {
     const userId = req.user._id.toString();
     const userObjectId = req.user._id;
@@ -153,8 +152,8 @@ async function calculateStreak(userObjectId) {
   attempts.forEach((a) => {
     const d = new Date(a.submittedAt);
     dateSet.add(
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-      );
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+    );
   });
 
   // Walk backwards from today
@@ -187,4 +186,6 @@ async function calculateStreak(userObjectId) {
   return streak;
 }
 
-module.exports = { getProgressAnalysis };
+export default {
+  getProgressAnalysis,
+};

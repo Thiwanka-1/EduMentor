@@ -1,9 +1,6 @@
-// Reinforce Controller — Adaptive Concept Reinforcement Engine
-// Reads weak topics  generates topic quizzes  scores answers
-// updates mastery  promotes mastered topics
-const StudentProfile = require("../models/studentProfile.model");
-const TopicProgress = require("../models/topicProgress.model");
-const { generate } = require("../services/ollama.service");
+import StudentProfile from "../models/studentProfile.model.js";
+import TopicProgress from "../models/topicProgress.model.js";
+import { generate } from "../services/ollama.service.js";
 
 function getDifficulty(score) {
   if (score >= 85) return "hard";
@@ -43,7 +40,7 @@ function parseReinforcementJSON(raw) {
       if (Array.isArray(parsed) && parsed.length > 0) {
         console.log(
           `   Reinforcement JSON parsed (strategy 1): ${parsed.length} items`,
-          );
+        );
         return parsed;
       }
     } catch (e) {
@@ -74,7 +71,7 @@ function parseReinforcementJSON(raw) {
     if (objectBlocks.length > 0) {
       console.log(
         `   Reinforcement JSON parsed (strategy 2): ${objectBlocks.length} items`,
-        );
+      );
       return objectBlocks;
     }
   }
@@ -92,7 +89,7 @@ function parseReinforcementJSON(raw) {
       if (Array.isArray(questions) && questions.length > 0) {
         console.log(
           `   Reinforcement JSON parsed (strategy 3): ${questions.length} items`,
-          );
+        );
         return questions;
       }
     } catch (_) {
@@ -104,12 +101,12 @@ function parseReinforcementJSON(raw) {
   console.error("   Raw output (first 500 chars):\n", raw.slice(0, 500));
   throw new Error(
     "The AI model returned an unexpected format. Please try again.",
-    );
+  );
 }
 
 // GET /api/reinforce/weak-topics
 // Return weak topics for the logged-in user
-async function getWeakTopics(req, res, next) {
+export async function getWeakTopics(req, res, next) {
   try {
     const userId = req.user._id.toString();
 
@@ -160,7 +157,7 @@ async function getWeakTopics(req, res, next) {
 // POST /api/reinforce/generate-quiz
 // Body: { topic }
 // Generate a quiz for a specific weak topic using Ollama
-async function generateReinforcementQuiz(req, res, next) {
+export async function generateReinforcementQuiz(req, res, next) {
   try {
     const userId = req.user._id.toString();
     const { topic } = req.body;
@@ -228,12 +225,12 @@ Example format:
     if (normalisedQuestions.length === 0) {
       throw new Error(
         "The AI model did not return any valid questions. Please try again.",
-        );
+      );
     }
 
     console.log(
       `   Generated ${normalisedQuestions.length} reinforcement questions`,
-      );
+    );
 
     res.json({
       success: true,
@@ -251,7 +248,7 @@ Example format:
 // POST /api/reinforce/submit
 // Body: { topic, answers: [{ questionId, userAnswer, correctAnswer }] }
 // Score the answers and update mastery / difficulty
-async function submitReinforcementAnswers(req, res, next) {
+export async function submitReinforcementAnswers(req, res, next) {
   try {
     const userId = req.user._id.toString();
     const { topic, answers } = req.body;
@@ -320,7 +317,7 @@ async function submitReinforcementAnswers(req, res, next) {
     // Update mastery: weighted average — 40 % existing + 60 % new round
     const newMastery = Math.round(
       progress.masteryScore * 0.4 + roundScore * 0.6,
-      );
+    );
     const newDifficulty = getDifficulty(newMastery);
     const isCompleted = newMastery > 95;
 
@@ -337,13 +334,13 @@ async function submitReinforcementAnswers(req, res, next) {
           $pull: { weakTopics: topic },
           $addToSet: { strongTopics: topic },
         },
-        );
+      );
       console.log(`   Topic "${topic}" mastered by user ${userId}`);
     }
 
     console.log(
       `   Reinforcement result: ${correctCount}/${totalQuestions} (${roundScore}%) → mastery ${newMastery}%`,
-      );
+    );
 
     res.json({
       success: true,
@@ -364,7 +361,7 @@ async function submitReinforcementAnswers(req, res, next) {
 
 // GET /api/reinforce/progress
 // Return progress for all topics the user has worked on
-async function getProgress(req, res, next) {
+export async function getProgress(req, res, next) {
   try {
     const userId = req.user._id.toString();
 
@@ -386,10 +383,3 @@ async function getProgress(req, res, next) {
     next(err);
   }
 }
-
-module.exports = {
-  getWeakTopics,
-  generateReinforcementQuiz,
-  submitReinforcementAnswers,
-  getProgress,
-};

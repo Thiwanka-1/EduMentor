@@ -1,8 +1,7 @@
-// Dashboard Controller — Aggregated stats for the Dashboard page
-const Material = require("../models/material.model");
-const Attempt = require("../models/attempt.model");
-const TopicProgress = require("../models/topicProgress.model");
-const StudentProfile = require("../models/studentProfile.model");
+import Material from "../models/material.model.js";
+import Attempt from "../models/attempt.model.js";
+import TopicProgress from "../models/topicProgress.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
 
 /**
  * GET /api/dashboard/summary
@@ -17,7 +16,7 @@ const StudentProfile = require("../models/studentProfile.model");
  *   weakTopics         // weak topics with mastery percentages
  * }
  */
-async function getDashboardSummary(req, res, next) {
+export async function getDashboardSummary(req, res, next) {
   try {
     const userId = req.user._id.toString();
     const userObjectId = req.user._id;
@@ -99,5 +98,3 @@ async function getDashboardSummary(req, res, next) {
     next(err);
   }
 }
-
-module.exports = { getDashboardSummary };
