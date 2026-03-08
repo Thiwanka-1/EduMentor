@@ -21,9 +21,9 @@ export default function TutorMode() {
   const [input, setInput] = useState("");
   const [status, setStatus] = useState("idle");
 
-  const WS_URL = "ws://localhost:5001/ws/tutor";
-  const API_BASE = "http://localhost:5001";
-
+ const WS_URL = "ws://localhost:5000/ws/tutor";
+  const API_BASE = "http://localhost:5000";
+  
   // 🔊 Tutor speaking
   async function speakTeacher(text) {
     try {

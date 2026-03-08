@@ -3,8 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import AvatarScene from "../three/AvatarScene.jsx";
 import { playVisemes } from "../utils/avatar/playVisemes.jsx";
 
-const API_BASE = "http://localhost:5001";
-const WS_URL = "ws://localhost:5001/ws/lesson";
+//const API_BASE = "http://localhost:5001";
+//const WS_URL = "ws://localhost:5001/ws/lesson";
+
+const API_BASE = "http://localhost:5000";
+const WS_URL = "ws://localhost:5000/ws/lesson";
+
 
 export default function LessonMode() {
   const wsRef = useRef(null);
