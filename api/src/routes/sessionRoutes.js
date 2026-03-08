@@ -1,4 +1,4 @@
-// api/routes/sessionRoutes.js
+// api/src/routes/sessionRoutes.js
 import express from "express";
 import {
   listSessions,
@@ -7,22 +7,24 @@ import {
   deleteSession,
   getMessages,
 } from "../controllers/sessionController.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// GET /api/sessions?userId=...
-router.get("/", listSessions);
+// Because server.js uses app.use("/api/sessions", sessionRoutes)
+// The following route resolves to GET /api/sessions
+router.get("/", protect, listSessions);
 
-// POST /api/sessions { userId, title? }
-router.post("/", createSession);
+// Resolves to POST /api/sessions
+router.post("/", protect, createSession);
 
-// GET /api/sessions/:id/messages?userId=...
-router.get("/:id/messages", getMessages);
+// Resolves to GET /api/sessions/:id/messages
+router.get("/:id/messages", protect, getMessages);
 
-// PATCH /api/sessions/:id { userId, title }
-router.patch("/:id", renameSession);
+// Resolves to PATCH /api/sessions/:id
+router.patch("/:id", protect, renameSession);
 
-// DELETE /api/sessions/:id?userId=...
-router.delete("/:id", deleteSession);
+// Resolves to DELETE /api/sessions/:id
+router.delete("/:id", protect, deleteSession);
 
 export default router;
