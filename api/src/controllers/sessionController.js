@@ -6,8 +6,8 @@ import { DocFile } from "../models/DocFile.js";
 
 export async function listSessions(req, res) {
   try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "userId is required" });
+    // 🚨 SECURE: Get userId from the verified session cookie
+    const userId = req.user._id;
 
     const sessions = await ChatSession.find({ userId })
       .sort({ lastMessageAt: -1, updatedAt: -1 })
@@ -22,8 +22,9 @@ export async function listSessions(req, res) {
 
 export async function createSession(req, res) {
   try {
-    const { userId, title } = req.body;
-    if (!userId) return res.status(400).json({ error: "userId is required" });
+    // 🚨 SECURE: Get userId from the verified session cookie
+    const userId = req.user._id;
+    const { title } = req.body;
 
     const session = await ChatSession.create({
       userId,
@@ -40,10 +41,14 @@ export async function createSession(req, res) {
 
 export async function renameSession(req, res) {
   try {
+    // 🚨 SECURE: Get userId from the verified session cookie
+    const userId = req.user._id;
     const { id } = req.params;
-    const { userId, title } = req.body;
-    if (!userId || !title?.trim())
-      return res.status(400).json({ error: "userId and title are required" });
+    const { title } = req.body;
+    
+    if (!title?.trim()) {
+      return res.status(400).json({ error: "title is required" });
+    }
 
     const session = await ChatSession.findOneAndUpdate(
       { _id: id, userId },
@@ -61,9 +66,9 @@ export async function renameSession(req, res) {
 
 export async function deleteSession(req, res) {
   try {
+    // 🚨 SECURE: Get userId from the verified session cookie
+    const userId = req.user._id;
     const { id } = req.params;
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "userId is required" });
 
     await ChatSession.deleteOne({ _id: id, userId });
     await ConversationMessage.deleteMany({ sessionId: id, userId });
@@ -79,9 +84,9 @@ export async function deleteSession(req, res) {
 
 export async function getMessages(req, res) {
   try {
+    // 🚨 SECURE: Get userId from the verified session cookie
+    const userId = req.user._id;
     const { id } = req.params; // sessionId
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ error: "userId is required" });
 
     const msgs = await ConversationMessage.find({ userId, sessionId: id })
       .sort({ createdAt: 1 })
