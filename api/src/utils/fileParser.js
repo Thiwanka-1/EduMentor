@@ -1,16 +1,14 @@
-// File Parser Utility
-// Extracts text from PDF, DOCX, and PNG (OCR) files
-const fs = require("fs");
-const path = require("path");
-const pdfParse = require("pdf-parse");
-const mammoth = require("mammoth");
+import fs from "fs";
+import path from "path";
+import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
 
 /**
  * Extract text from a single file based on its type.
  * @param {string} filePath – absolute path to the uploaded file
  * @returns {Promise<string>} extracted text
  */
-async function extractText(filePath) {
+export async function extractText(filePath) {
   const ext = path.extname(filePath).toLowerCase();
 
   switch (ext) {
@@ -49,13 +47,13 @@ async function extractDOCX(filePath) {
  */
 async function extractImage(filePath) {
   try {
-    const Tesseract = require("tesseract.js");
+    const Tesseract = await import("tesseract.js");
     const { data } = await Tesseract.recognize(filePath, "eng", {
       logger: (info) => {
         if (info.status === "recognizing text") {
           process.stdout.write(
             `\r   OCR progress: ${Math.round(info.progress * 100)}%`,
-            );
+          );
         }
       },
     });
@@ -72,7 +70,7 @@ async function extractImage(filePath) {
  * @param {Array<{path: string, originalname: string}>} files
  * @returns {Promise<string>}
  */
-async function extractFromMultipleFiles(files) {
+export async function extractFromMultipleFiles(files) {
   const results = [];
 
   for (const file of files) {
@@ -91,8 +89,3 @@ async function extractFromMultipleFiles(files) {
 
   return results.join("\n\n");
 }
-
-module.exports = {
-  extractText,
-  extractFromMultipleFiles,
-};

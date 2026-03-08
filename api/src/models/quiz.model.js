@@ -1,5 +1,4 @@
-// Quiz Model — MongoDB Schema
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const questionSchema = new mongoose.Schema(
   {
@@ -23,7 +22,7 @@ const questionSchema = new mongoose.Schema(
     },
   },
   { _id: false },
-  );
+);
 
 const quizSchema = new mongoose.Schema(
   {
@@ -55,10 +54,10 @@ const quizSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Index for fetching quizzes by material
 quizSchema.index({ materialId: 1 });
 quizSchema.index({ createdAt: -1 });
 
-module.exports = mongoose.model("Quiz", quizSchema);
+export default mongoose.model("Quiz", quizSchema);

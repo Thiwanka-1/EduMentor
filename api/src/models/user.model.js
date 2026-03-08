@@ -1,6 +1,5 @@
-// User Model — MongoDB Schema
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
@@ -45,7 +44,7 @@ const userSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-  );
+);
 
 // Hash password before saving
 userSchema.pre("save", async function (next) {
@@ -63,4 +62,4 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 // Index for login lookups
 userSchema.index({ email: 1 });
 
-module.exports = mongoose.model("User", userSchema);
+export default mongoose.model("User", userSchema);

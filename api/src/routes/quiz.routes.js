@@ -1,14 +1,6 @@
-// Quiz Routes  — Protected with Auth
-const express = require("express");
-const {
-  generateQuiz,
-  regenerateQuiz,
-  getQuizById,
-  getQuizzesByMaterial,
-  listAllQuizzes,
-  ollamaHealth,
-} = require("../controllers/quiz.controller");
-const { protect } = require("../middleware/auth.middleware");
+import express from "express";
+import { generateQuiz, regenerateQuiz, getQuizById, getQuizzesByMaterial, listAllQuizzes, ollamaHealth } from "../controllers/quiz.controller.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -28,4 +20,4 @@ router.get("/material/:materialId", protect, getQuizzesByMaterial);
 // Get quiz by ID (keep this LAST to avoid matching other routes)
 router.get("/:id", protect, getQuizById);
 
-module.exports = router;
+export default router;
