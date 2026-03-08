@@ -1,8 +1,6 @@
 // controllers/chatController.js
 import "../config/env.js";
-//import { hf, HF_CHAT_MODEL } from "../config/hfClient.js";
 import { generateBuddyCompletion } from "../config/llmClient.js";
-
 
 import { ConversationMessage } from "../models/ConversationMessage.js";
 import { StudentProfile } from "../models/StudentProfile.js";
@@ -13,7 +11,7 @@ import { retrieveStudyContext, buildContextText } from "./docController.js";
 function detectMood(text) {
   const t = text.toLowerCase();
 
-  if (/(suicid|kill myself|end it)/.test(t)) return "very_low"; // you can handle later
+  if (/(suicid|kill myself|end it)/.test(t)) return "very_low"; 
   if (/(stressed|overwhelmed|panic|anxious|pressure|burnt out)/.test(t)) return "stressed";
   if (/(sad|down|depressed|cry|hurt|lonely|not ok)/.test(t)) return "sad";
   if (/(tired|exhausted|sleepy|no energy|fatigued)/.test(t)) return "tired";
@@ -163,9 +161,12 @@ function formatBuddyReply(raw) {
 
 export async function chatWithBuddy(req, res) {
   try {
-    const { userId, sessionId, message } = req.body;
-    if (!userId || !sessionId || !message) {
-      return res.status(400).json({ error: "userId, sessionId, message are required" });
+    // 🚨 SECURE: Grab userId from the verified session cookie
+    const userId = req.user._id;
+    const { sessionId, message } = req.body;
+    
+    if (!sessionId || !message) {
+      return res.status(400).json({ error: "sessionId and message are required" });
     }
 
     // ensure session exists for this user
@@ -191,11 +192,6 @@ export async function chatWithBuddy(req, res) {
     // exam extraction
     const exam = extractExamMention(message);
     if (exam) {
-      // avoid duplicates (same note)
-      // const exists = profile.upcomingExams.some((e) => e.note === exam.note);
-      // if (!exists) profile.upcomingExams.unshift(exam);
-      // profile.upcomingExams = profile.upcomingExams.slice(0, 10);
-
       profile.upcomingExams = profile.upcomingExams || [];
 
       const exists = profile.upcomingExams.some((e) => e.note === exam.note);
@@ -222,41 +218,25 @@ export async function chatWithBuddy(req, res) {
 
     const systemPrompt = buildSystemPrompt(profile, contextText, intent);
 
-    // const messages = [{ role: "system", content: systemPrompt }];
-    // for (const h of history) messages.push({ role: h.role, content: h.content });
-    // messages.push({ role: "user", content: message });
-
     const messages = [{ role: "system", content: systemPrompt }];
-for (const h of history) {
-  messages.push({ role: h.role, content: h.content });
-}
+    for (const h of history) {
+      messages.push({ role: h.role, content: h.content });
+    }
 
-    // const completion = await hf.chatCompletion({
-    //   model: HF_CHAT_MODEL,
-    //   messages,
-    //   max_tokens: 340,
-    //   temperature: 0.6,
-    // });
-
-    // let reply =
-    //   completion?.choices?.[0]?.message?.content?.trim() ||
-    //   "Sorry, I got stuck. Can you say that again?";
-
-    // reply = formatBuddyReply(reply);
-console.log("🟡 Final messages sent to LLM:", messages.map((m) => ({
-  role: m.role,
-  preview: String(m.content).slice(0, 120),
-})));
+    console.log("🟡 Final messages sent to LLM:", messages.map((m) => ({
+      role: m.role,
+      preview: String(m.content).slice(0, 120),
+    })));
 
     let reply = await generateBuddyCompletion({
-  messages,
-  max_tokens: 340,
-  temperature: 0.6,
-  top_p: 0.95,
-});
+      messages,
+      max_tokens: 340,
+      temperature: 0.6,
+      top_p: 0.95,
+    });
 
-reply = reply || "Sorry, I got stuck. Can you say that again?";
-reply = formatBuddyReply(reply);
+    reply = reply || "Sorry, I got stuck. Can you say that again?";
+    reply = formatBuddyReply(reply);
 
     await ConversationMessage.create({ userId, sessionId, role: "assistant", content: reply });
 
