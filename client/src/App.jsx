@@ -2,6 +2,9 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
+// ✅ Import the AuthProvider to fix the useAuth crash!
+import { AuthProvider } from "./context/AuthContext";
+
 // Public Pages
 import Home from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
@@ -12,6 +15,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ProfilePage from "./pages/ProfilePage";
 import TutorMode from "./pages/TutorMode.jsx";
 import LessonMode from "./pages/LessonMode.jsx";
+import ChatPage from "./components/ChatPage.jsx";
 
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
@@ -26,7 +30,7 @@ import AceAnalysis from "./pages/ace/AceAnalysis";
 import AceFlashcards from "./pages/ace/AceFlashcards";
 import AceSession from "./pages/ace/AceSession";
 import AceReinforce from "./pages/ace/AceReinforce";
-import ChatPage from "./components/ChatPage.jsx";
+import ReviewQuiz from "./pages/ace/ReviewQuiz";
 
 function NotFoundInline() {
   return (
@@ -54,49 +58,52 @@ function NotFoundInline() {
 
 export default function App() {
   return (
-    <Routes>
-      {/* ==========================================
-          PUBLIC ROUTES (Anyone can access)
-          ========================================== */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/about" element={<Navigate to="/#about" replace />} />
-      <Route path="/contact" element={<Navigate to="/#contact" replace />} />
+    // ✅ Wrap everything in the AuthProvider!
+    <AuthProvider>
+      <Routes>
+        {/* ==========================================
+            PUBLIC ROUTES (Anyone can access)
+            ========================================== */}
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/about" element={<Navigate to="/#about" replace />} />
+        <Route path="/contact" element={<Navigate to="/#contact" replace />} />
 
-      {/* ==========================================
-          PROTECTED ROUTES (Must be logged in)
-          ========================================== */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/profile" element={<ProfilePage />} />
+        {/* ==========================================
+            PROTECTED ROUTES (Must be logged in)
+            ========================================== */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/profile" element={<ProfilePage />} />
 
-        {/* ✅ MVEG module */}
-        <Route path="/mveg" element={<MvegLayout />}>
-          <Route index element={<Navigate to="/mveg/explain" replace />} />
-          <Route path="explain" element={<MvegExplain />} />
-          <Route path="library" element={<MvegLibrary />} />
+          {/* ✅ MVEG module */}
+          <Route path="/mveg" element={<MvegLayout />}>
+            <Route index element={<Navigate to="/mveg/explain" replace />} />
+            <Route path="explain" element={<MvegExplain />} />
+            <Route path="library" element={<MvegLibrary />} />
+          </Route>
+
+          {/* ✅ ACE module */}
+          <Route path="/ace" element={<AceLayout />}>
+            <Route index element={<AceDashboard />} />
+            <Route path="create" element={<AceCreate />} />
+            <Route path="analysis" element={<AceAnalysis />} />
+            <Route path="flashcards" element={<AceFlashcards />} />
+            <Route path="session" element={<AceSession />} />
+            <Route path="reinforce" element={<AceReinforce />} />
+            <Route path="history" element={<ReviewQuiz />} />
+          </Route>
+
+          {/* Standalone Tools */}
+          <Route path="/tutor" element={<TutorMode />} />
+          <Route path="/lesson" element={<LessonMode />} />
+
+          <Route path="/study-buddy" element={<ChatPage />} />
         </Route>
 
-        {/* ✅ ACE module */}
-        <Route path="/ace" element={<AceLayout />}>
-          <Route index element={<AceDashboard />} />
-          <Route path="create" element={<AceCreate />} />
-          <Route path="analysis" element={<AceAnalysis />} />
-          <Route path="flashcards" element={<AceFlashcards />} />
-          <Route path="session" element={<AceSession />} />
-          <Route path="reinforce" element={<AceReinforce />} />
-        </Route>
-
-        {/* Standalone Tools */}
-        <Route path="/tutor" element={<TutorMode />} />
-        <Route path="/lesson" element={<LessonMode />} />
-
-        <Route path="/study-buddy" element={<ChatPage />} />
-
-      </Route>
-
-      {/* Catch-all 404 */}
-      <Route path="*" element={<NotFoundInline />} />
-    </Routes>
+        {/* Catch-all 404 */}
+        <Route path="*" element={<NotFoundInline />} />
+      </Routes>
+    </AuthProvider>
   );
 }

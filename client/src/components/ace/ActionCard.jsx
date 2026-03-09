@@ -18,5 +18,5 @@ export function ActionCard({ icon, title, desc, onClick }) {
       </p>
     </div>
     </div>
-  );
+    );
 }

@@ -12,5 +12,5 @@ export function WeakPoint({ label, value }) {
         />
       </div>
     </div>
-  );
+    );
 }

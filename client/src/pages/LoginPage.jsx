@@ -1,10 +1,16 @@
 // client/src/pages/LoginPage.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { api } from "../services/api";
+import useAuth from "../hooks/useAuth"; // ✅ 1. Import useAuth hook
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth(); // ✅ 2. Get the login function from context
+
+  const from = location.state?.from || "/"; // Default route after login
+
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -33,10 +39,17 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
+      // The backend will automatically set the HTTP-only cookie
       const res = await api.post("/auth/login", formData);
-      // If successful, the cookie is automatically set by the browser!
       console.log("Logged in:", res.data);
-      navigate("/"); // Redirect to home or dashboard
+
+      // ✅ 3. Update the AuthContext and set the local flag!
+      localStorage.setItem("edumentor_is_logged_in", "true"); // Fallback flag for page reloads
+      login(res.data); // Update global state
+      
+      // ✅ 4. Navigate to the dashboard
+      navigate(from, { replace: true }); 
+
     } catch (err) {
       setServerError(err.response?.data?.message || "An error occurred during login.");
     } finally {

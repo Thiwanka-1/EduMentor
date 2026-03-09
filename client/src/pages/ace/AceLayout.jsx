@@ -10,5 +10,5 @@ export default function AceLayout() {
         <Outlet />
       </main>
     </div>
-  );
+    );
 }
