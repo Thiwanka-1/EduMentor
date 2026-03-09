@@ -15,6 +15,15 @@ import buddychatRoutes from "./src/routes/chatRoutes.js";
 import docRoutes from "./src/routes/docRoutes.js";
 import sessionRoutes from "./src/routes/sessionRoutes.js";
 
+
+import materialRoutes from "./src/routes/materialRoutes.js";
+import quizRoutes from "./src/routes/quizRoutes.js";
+import adaptiveDashboardRoutes from "./src/routes/adaptiveDashboardRoutes.js";
+
+
+import dns from "node:dns/promises";
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
+
 // Load environment variables
 dotenv.config();
 
@@ -58,6 +67,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/mveg", chatRoutes);
 app.use("/api/mveg", explanationRoutes);
 app.use("/api/mveg", studyToolsRoutes);
+
+
+app.use("/api/adaptive/material", materialRoutes);
+app.use("/api/adaptive/quiz", quizRoutes);
+app.use("/api/adaptive/dashboard", adaptiveDashboardRoutes);
 
 // Port
 const PORT = process.env.PORT || 5000;
