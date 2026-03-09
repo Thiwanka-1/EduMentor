@@ -7,6 +7,9 @@ import { StudentProfile } from "../models/StudentProfile.js";
 import { ChatSession } from "../models/ChatSession.js";
 import { retrieveStudyContext, buildContextText } from "./docController.js";
 
+// 🔴 NEW IMPORT: Connect to the Adaptive Engine
+import { logExternalWeakPoint } from "../utils/weakPointLogger.js";
+
 // -------- mood detection (better) --------
 function detectMood(text) {
   const t = text.toLowerCase();
@@ -71,6 +74,19 @@ function extractExamMention(message) {
   }
 
   return { subject, date, note: message.slice(0, 120) };
+}
+
+// 🔴 NEW FUNCTION: Extract weak topics from user messages
+function extractWeakTopic(message) {
+  const t = message.toLowerCase();
+  
+  // Looks for phrases like "struggling with [Topic]", "confused about [Topic]", "stuck on [Topic]"
+  const match = t.match(/(struggling with|don'?t understand|confused about|help me with|stuck on)\s+([a-zA-Z0-9 _-]{3,40})/i);
+  
+  if (match && match[2]) {
+    return match[2].trim();
+  }
+  return null;
 }
 
 function buildSystemPrompt(profile, contextText, intent) {
@@ -197,6 +213,21 @@ export async function chatWithBuddy(req, res) {
       const exists = profile.upcomingExams.some((e) => e.note === exam.note);
       if (!exists) profile.upcomingExams.unshift(exam);
       profile.upcomingExams = profile.upcomingExams.slice(0, 10);
+    }
+
+    // 🔴 NEW LOGIC: Detect and Save Weak Points to Adaptive Engine
+    const detectedWeakTopic = extractWeakTopic(message);
+    
+    if (detectedWeakTopic) {
+      // 1. Save it to StudyBuddy's local profile for context in future chats
+      if (!profile.weakTopics.includes(detectedWeakTopic)) {
+        profile.weakTopics.unshift(detectedWeakTopic);
+        // Keep the array manageable (max 10 topics)
+        profile.weakTopics = profile.weakTopics.slice(0, 10); 
+      }
+      
+      // 2. Send it to the Adaptive Engine seamlessly in the background!
+      logExternalWeakPoint(userId, detectedWeakTopic, 'studybuddy');
     }
 
     if (needsCheckIn(profile)) profile.lastCheckInAt = new Date();
