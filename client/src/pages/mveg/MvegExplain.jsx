@@ -20,12 +20,14 @@ export default function MvegExplain() {
     <section className="h-full flex flex-col min-w-0 bg-slate-50">
       {/* Mode Tabs Area */}
       <div className="px-6 pt-6 pb-4 border-b border-slate-200 bg-white">
-        <div className="max-w-4xl mx-auto flex justify-center">
+        <div className="max-w-4xl mx-auto flex items-center justify-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-indigo-600 to-cyan-500 text-white grid place-items-center font-extrabold shadow-sm">
+            ✦
+          </div>
           <ModeTabs mode={mode} setMode={setMode} />
         </div>
       </div>
 
-      {/* Content Area */}
       {!active ? (
         <div className="flex-1 min-w-0">
           <EmptyState onPick={onPickSample} />

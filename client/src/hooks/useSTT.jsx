@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { WS_BASE } from "../api/wsConfig.jsx";
+
 export default function useSTT(onFinalText) {
   const mediaRecorderRef = useRef(null);
   const audioChunks = useRef([]);

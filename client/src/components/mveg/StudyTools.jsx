@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Sparkles, Wand2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useMveg } from "../../pages/mveg/mvegStore";
 import { getRelatedConcepts } from "../../services/mvegApi";
 
-const MODULES = ["ALL", "AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
+const MODULES = ["AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
 
 function complexityLabel(level = 55) {
   if (level <= 30) return "Novice";
@@ -12,13 +13,12 @@ function complexityLabel(level = 55) {
 }
 
 export default function StudyTools({ answerText, drawer = false }) {
+  const navigate = useNavigate();
   const {
     strict,
     setStrict,
     active,
     setInput,
-
-    // ✅ new global controls
     module,
     setModule,
     complexity,
@@ -28,7 +28,6 @@ export default function StudyTools({ answerText, drawer = false }) {
   const [related, setRelated] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
-  // ✅ Fetch related when active explanation changes
   useEffect(() => {
     const id = active?._id;
     if (!id) {
@@ -83,21 +82,23 @@ export default function StudyTools({ answerText, drawer = false }) {
         {/* Strict Syllabus */}
         <Card>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800">
+            <p className="text-sm font-semibold text-slate-900">
               Strict Syllabus Only
             </p>
 
             <button
               onClick={() => setStrict(!strict)}
               className={[
-                "w-12 h-6 rounded-full transition relative",
-                strict ? "bg-slate-900" : "bg-slate-300",
+                "w-12 h-6 rounded-full transition relative border border-slate-200",
+                strict
+                  ? "bg-gradient-to-r from-indigo-600 to-cyan-500"
+                  : "bg-slate-200",
               ].join(" ")}
               aria-label="Toggle strict syllabus"
             >
               <span
                 className={[
-                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition",
+                  "absolute top-0.5 w-5 h-5 rounded-full bg-white transition shadow-sm",
                   strict ? "left-6" : "left-1",
                 ].join(" ")}
               />
@@ -106,10 +107,10 @@ export default function StudyTools({ answerText, drawer = false }) {
 
           <p className="mt-2 text-xs text-slate-600">
             When enabled, answers are generated ONLY from your uploaded lecture
-            materials (RAG retrieval).
+            PDFs (RAG retrieval).
           </p>
 
-          {/* ✅ Module dropdown only active when strict ON */}
+          {/* Module */}
           <div className="mt-4">
             <label className="text-xs font-semibold text-slate-600">
               Active Module
@@ -119,8 +120,10 @@ export default function StudyTools({ answerText, drawer = false }) {
               onChange={(e) => setModule(e.target.value)}
               disabled={!strict}
               className={[
-                "mt-2 w-full h-10 rounded-lg border border-slate-300 px-3 text-sm bg-white",
-                strict ? "text-slate-800" : "text-slate-400 bg-slate-50",
+                "mt-2 w-full h-10 rounded-xl border px-3 text-sm bg-white transition",
+                strict
+                  ? "border-slate-200 text-slate-800 focus:ring-2 focus:ring-indigo-200"
+                  : "border-slate-200 text-slate-400 bg-slate-50",
               ].join(" ")}
             >
               {MODULES.map((m) => (
@@ -138,13 +141,13 @@ export default function StudyTools({ answerText, drawer = false }) {
           </div>
         </Card>
 
-        {/* ✅ Complexity */}
+        {/* Complexity */}
         <Card>
           <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-slate-800">
+            <p className="text-sm font-semibold text-slate-900">
               Complexity Level
             </p>
-            <span className="text-xs px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+            <span className="text-xs px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-semibold">
               {label}
             </span>
           </div>
@@ -155,7 +158,7 @@ export default function StudyTools({ answerText, drawer = false }) {
             max="100"
             value={complexity}
             onChange={(e) => setComplexity(Number(e.target.value))}
-            className="w-full mt-3 accent-slate-900"
+            className="w-full mt-3 accent-indigo-600"
           />
 
           <div className="flex justify-between text-xs text-slate-500 mt-1">
@@ -164,15 +167,15 @@ export default function StudyTools({ answerText, drawer = false }) {
           </div>
 
           <p className="mt-2 text-xs text-slate-600">
-            Controls explanation depth (used in both Normal + Strict mode).
+            Controls explanation depth (used in Normal + Strict mode).
           </p>
         </Card>
 
-        {/* Quiz (placeholder) */}
+        {/* Quiz */}
         <Card>
           <div className="flex items-center gap-2">
-            <Sparkles size={16} />
-            <p className="text-sm font-semibold text-slate-800">
+            <Sparkles size={16} className="text-indigo-600" />
+            <p className="text-sm font-semibold text-slate-900">
               Generate Quiz
             </p>
           </div>
@@ -181,14 +184,20 @@ export default function StudyTools({ answerText, drawer = false }) {
             Automatically create mastery questions from this explanation.
           </p>
 
-          <button className="mt-3 w-full h-10 rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition flex items-center justify-center gap-2">
+          <button
+            onClick={() => navigate("/ace")}
+            className="mt-3 w-full h-10 rounded-xl text-white font-bold
+                       bg-gradient-to-r from-indigo-600 to-cyan-500
+                       hover:from-indigo-500 hover:to-cyan-400 transition
+                       flex items-center justify-center gap-2 shadow-sm"
+          >
             <Wand2 size={16} /> Generate
           </button>
         </Card>
 
-        {/* Related Concepts (dynamic) */}
+        {/* Related */}
         <Card>
-          <p className="text-sm font-semibold text-slate-800">
+          <p className="text-sm font-semibold text-slate-900">
             Related Concepts
           </p>
 
@@ -205,10 +214,10 @@ export default function StudyTools({ answerText, drawer = false }) {
                 }
                 onClick={() => setInput(r)}
                 className={[
-                  "w-full text-left text-sm rounded-lg px-3 py-2 transition",
+                  "w-full text-left text-sm rounded-xl px-3 py-2 transition",
                   loadingRelated || !active?._id
                     ? "text-slate-500"
-                    : "text-slate-700 hover:bg-slate-100",
+                    : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
                 ].join(" ")}
               >
                 {r}
@@ -229,7 +238,7 @@ export default function StudyTools({ answerText, drawer = false }) {
 
 function Card({ children }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       {children}
     </div>
   );

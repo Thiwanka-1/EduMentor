@@ -12,7 +12,6 @@ export default function ExplanationCanvas({
 }) {
   const navigate = useNavigate();
 
-  // current displayed answer (supports new multi-view + old records)
   const currentAnswer =
     active?.answer ||
     active?.views?.[active?.mode || "simple"] ||
@@ -22,9 +21,7 @@ export default function ExplanationCanvas({
   return (
     <div className="h-full flex flex-col px-6 py-8 bg-slate-50">
       <div className="max-w-4xl w-full mx-auto pb-[120px]">
-        {/* Main Card */}
         <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          {/* Question Header */}
           <div className="px-6 py-6 border-b border-slate-200 bg-slate-50">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -36,7 +33,6 @@ export default function ExplanationCanvas({
                 </h1>
               </div>
 
-              {/* Tutor Button */}
               <button
                 onClick={() =>
                   navigate("/tutor", {
@@ -46,8 +42,9 @@ export default function ExplanationCanvas({
                     },
                   })
                 }
-                className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl
-                           bg-slate-900 text-white hover:bg-slate-800 transition"
+                className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold
+                           bg-gradient-to-r from-indigo-600 to-cyan-500
+                           hover:from-indigo-500 hover:to-cyan-400 transition shadow-sm"
               >
                 <UserCircle2 size={18} />
                 Tutor
@@ -55,7 +52,6 @@ export default function ExplanationCanvas({
             </div>
           </div>
 
-          {/* Answer Section */}
           <div className="px-6 py-6 text-slate-800">
             {loading ? (
               <div className="space-y-3 animate-pulse">
@@ -69,18 +65,17 @@ export default function ExplanationCanvas({
           </div>
         </div>
 
-        {/* Action Bar */}
         <div className="mt-6 flex items-center gap-3">
           <button
             onClick={onCopy}
-            className="h-11 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 transition flex items-center gap-2 shadow-sm"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center gap-2 shadow-sm"
           >
             <Copy size={16} /> Copy
           </button>
 
           <button
             onClick={onExportPdf}
-            className="h-11 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 transition flex items-center gap-2 shadow-sm"
+            className="h-11 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center gap-2 shadow-sm"
           >
             <FileDown size={16} /> Export PDF
           </button>
@@ -89,7 +84,9 @@ export default function ExplanationCanvas({
 
           <button
             onClick={onRegenerate}
-            className="h-11 px-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition flex items-center gap-2"
+            className="h-11 px-4 rounded-xl text-white font-bold
+                       bg-gradient-to-r from-indigo-600 to-cyan-500
+                       hover:from-indigo-500 hover:to-cyan-400 transition flex items-center gap-2 shadow-sm"
           >
             <RefreshCw size={16} /> Regenerate
           </button>

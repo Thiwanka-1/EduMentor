@@ -3,14 +3,18 @@ import {
   LayoutDashboard,
   HelpCircle,
   Layers,
-  TrendingUp,
   AlertTriangle,
+  BarChart3,
+  History,
   Home,
+  User as UserIcon,
 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 
 export default function AceSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
   const navItems = [
     {
@@ -30,7 +34,7 @@ export default function AceSidebar() {
     },
     {
       label: "Analysis",
-      icon: <TrendingUp size={18} />,
+      icon: <BarChart3 size={18} />,
       to: "/ace/analysis",
     },
     {
@@ -38,42 +42,49 @@ export default function AceSidebar() {
       icon: <AlertTriangle size={18} />,
       to: "/ace/reinforce",
     },
+    {
+      label: "Quiz History",
+      icon: <History size={18} />,
+      to: "/ace/history",
+    },
   ];
 
+  const initials = user?.name
+    ? user.name
+        .split(" ")
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "?";
+
   return (
-    <aside
-      className="w-64 px-5 py-6 flex flex-col
-                 bg-white dark:bg-[#070b18]
-                 border-r border-black/5 dark:border-white/5"
-    >
+    <aside className="w-64 px-5 py-6 border-r border-slate-200 bg-white flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 shadow-sm" />
         <div>
-          <p className="font-semibold">ReinforceAI</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Adaptive Engine 
-          </p>
+          <p className="font-bold text-slate-900">ReinforceAI</p>
+          <p className="text-xs text-slate-500">Adaptive Engine</p>
         </div>
       </div>
 
-      {/* ACE Navigation */}
+      {/* Navigation */}
       <nav className="space-y-1 text-sm">
         {navItems.map((item) => {
-          const isActive =
+          const active =
             location.pathname === item.to ||
-            (item.to !== "/ace" &&
-              location.pathname.startsWith(item.to));
+            (item.to !== "/ace" && location.pathname.startsWith(item.to));
 
           return (
             <div
               key={item.label}
               onClick={() => navigate(item.to)}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer transition
                 ${
-                  isActive
-                    ? "bg-indigo-600/15 text-indigo-500"
-                    : "text-slate-500 hover:text-black dark:hover:text-white"
+                  active
+                    ? "bg-indigo-50 text-indigo-700 border border-indigo-100 font-semibold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
             >
               {item.icon}
@@ -83,29 +94,25 @@ export default function AceSidebar() {
         })}
       </nav>
 
-      {/* Spacer */}
-      <div className="flex-1" />
-
-      {/* Back to Home */}
-      <div
-        onClick={() => navigate("/")}
-        className="flex items-center gap-3 px-4 py-2 mb-4 rounded-lg cursor-pointer
-                   text-slate-500 hover:text-black dark:hover:text-white
-                   hover:bg-black/5 dark:hover:bg-white/5"
-      >
-        <Home size={18} />
-        Back to Home
-      </div>
-
       {/* User */}
-      <div className="pt-4 border-t border-black/5 dark:border-white/5">
+      <div className="mt-auto pt-6 border-t border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-slate-500" />
-          <div>
-            <p className="text-sm font-medium">Alex Chen</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Pro Plan
-            </p>
+          {/* Profile + Home */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate("/profile")}
+              title="Profile"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+            >
+              <UserIcon size={16} />
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              title="Home"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+            >
+              <Home size={16} />
+            </button>
           </div>
         </div>
       </div>

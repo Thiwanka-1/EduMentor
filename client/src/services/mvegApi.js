@@ -1,25 +1,5 @@
-// src/services/mvegApi.js
+import { api } from "./api"; // <-- Import your new centralized Axios instance
 import { MOCK_EXPLANATIONS } from "./mockMveg";
-
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-
-async function request(path, options = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  if (!res.ok) {
-    const err = new Error("API error");
-    err.status = res.status;
-    throw err;
-  }
-
-  return res.json();
-}
 
 // helper: normalize item shape for old/new backend + mock
 function normalizeExplanation(item) {
@@ -42,9 +22,14 @@ function normalizeExplanation(item) {
 -----------------------------------*/
 export async function listExplanations() {
   try {
-    const data = await request("/api/explanations");
-    return Array.isArray(data) ? data.map(normalizeExplanation) : [];
-  } catch {
+    // Axios puts the response body inside the .data property
+    const res = await api.get("mveg/explanations");
+    return Array.isArray(res.data) ? res.data.map(normalizeExplanation) : [];
+  } catch (error) {
+    console.warn(
+      "Failed to fetch explanations, falling back to mock data.",
+      error.message,
+    );
     // fallback mock
     return MOCK_EXPLANATIONS.map((x) => ({
       _id: x._id,
@@ -68,9 +53,13 @@ export async function listExplanations() {
 -----------------------------------*/
 export async function getExplanation(id, mode = "simple") {
   try {
-    const item = await request(`/api/explanations/${id}`);
-    return normalizeExplanation(item);
-  } catch {
+    const res = await api.get(`mveg/explanations/${id}`);
+    return normalizeExplanation(res.data);
+  } catch (error) {
+    console.warn(
+      `Failed to fetch explanation ${id}, falling back to mock data.`,
+      error.message,
+    );
     const mock = MOCK_EXPLANATIONS.find((x) => x._id === id);
     if (!mock) throw new Error("Not found");
 
@@ -105,19 +94,27 @@ export async function generateExplanation({
   complexity = 55,
 }) {
   try {
-    const res = await request("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ message, mode, strict, module, complexity }),
+    const res = await api.post("mveg/chat", {
+      message,
+      mode,
+      strict,
+      module,
+      complexity,
     });
+    const data = res.data;
 
     return {
-      ...res,
-      mode: res.mode || mode || "simple",
-      views: res.views || null,
-      content: res.content || res.answer || "",
-      answer: res.answer || res.content || "",
+      ...data,
+      mode: data.mode || mode || "simple",
+      views: data.views || null,
+      content: data.content || data.answer || "",
+      answer: data.answer || data.content || "",
     };
-  } catch {
+  } catch (error) {
+    console.warn(
+      "Failed to generate explanation, falling back to mock data.",
+      error.message,
+    );
     // optional mock generation fallback
     const mock =
       MOCK_EXPLANATIONS[Math.floor(Math.random() * MOCK_EXPLANATIONS.length)];
@@ -128,18 +125,6 @@ export async function generateExplanation({
       code: mock?.answers?.code || "",
       summary: mock?.answers?.summary || "",
     };
-
-    return {
-      id: mock?._id || crypto.randomUUID?.() || String(Date.now()),
-      mode: mode || "simple",
-      content: views[mode] || views.simple || "",
-      answer: views[mode] || views.simple || "",
-      views,
-      question: message,
-      title: message.split(" ").slice(0, 6).join(" "),
-      createdAt: new Date().toISOString(),
-      outOfScope: false,
-    };
   }
 }
 
@@ -148,7 +133,8 @@ export async function generateExplanation({
 -----------------------------------*/
 export async function deleteExplanation(id) {
   try {
-    return await request(`/api/explanations/${id}`, { method: "DELETE" });
+    const res = await api.delete(`mveg/explanations/${id}`);
+    return res.data;
   } catch {
     return { ok: true };
   }
@@ -158,15 +144,14 @@ export async function deleteExplanation(id) {
    RENAME EXPLANATION
 -----------------------------------*/
 export async function renameExplanation(id, title) {
-  return request(`/api/explanations/${id}/title`, {
-    method: "PATCH",
-    body: JSON.stringify({ title }),
-  });
+  const res = await api.patch(`mveg/explanations/${id}/title`, { title });
+  return res.data;
 }
 
 /* ----------------------------------
    RELATED CONCEPTS
 -----------------------------------*/
 export async function getRelatedConcepts(explanationId) {
-  return request(`/api/explanations/${explanationId}/related`);
+  const res = await api.get(`mveg/explanations/${explanationId}/related`);
+  return res.data;
 }

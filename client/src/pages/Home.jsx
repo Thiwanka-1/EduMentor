@@ -1,36 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+// client/src/pages/Home.jsx
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-
-const STORAGE_KEY = "edumentor_theme";
-
-function useTheme() {
-  const getInitial = () => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved === "light" || saved === "dark") return saved;
-    const prefersDark = window.matchMedia?.(
-      "(prefers-color-scheme: dark)"
-    )?.matches;
-    return prefersDark ? "dark" : "light";
-  };
-
-  const [theme, setTheme] = useState(getInitial);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    localStorage.setItem(STORAGE_KEY, theme);
-  }, [theme]);
-
-  return { theme, setTheme };
-}
+import Navbar from "../components/Navbar.jsx";
 
 function Icon({ children, className = "" }) {
   return (
     <span
       className={
-        "inline-flex items-center justify-center w-10 h-10 rounded-2xl " +
-        "bg-slate-900 text-white dark:bg-white dark:text-slate-900 " +
+        "inline-flex items-center justify-center w-12 h-12 rounded-2xl shadow-sm text-lg font-bold " +
         className
       }
     >
@@ -39,485 +16,251 @@ function Icon({ children, className = "" }) {
   );
 }
 
-/** ✅ FIX: added `to` prop */
 function ModuleCard({ title, desc, tag, accent = "indigo", to }) {
   const navigate = useNavigate();
 
-  const accentGlow = {
-    indigo: "from-indigo-500/25 via-violet-500/10 to-transparent",
-    teal: "from-teal-500/25 via-cyan-500/10 to-transparent",
-    sky: "from-sky-500/25 via-indigo-500/10 to-transparent",
-    emerald: "from-emerald-500/25 via-teal-500/10 to-transparent",
+  const accentStyles = {
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-200",
+    cyan: "bg-cyan-50 text-cyan-600 border-cyan-200",
+    teal: "bg-teal-50 text-teal-600 border-teal-200",
+    violet: "bg-violet-50 text-violet-600 border-violet-200",
   }[accent];
 
   return (
     <div
-      className="group relative overflow-hidden rounded-3xl border border-slate-200/70 bg-white/70 p-6
-                 shadow-[0_14px_55px_-35px_rgba(2,6,23,0.55)]
-                 backdrop-blur transition hover:-translate-y-1
-                 dark:border-white/10 dark:bg-slate-950/40"
+      className="group relative overflow-hidden rounded-[24px] border border-slate-200 bg-white p-6 md:p-8
+                 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300"
     >
-      <div
-        className={
-          "pointer-events-none absolute -top-20 -right-20 h-64 w-64 rounded-full blur-3xl " +
-          "bg-gradient-to-br " +
-          accentGlow +
-          " opacity-70 group-hover:opacity-100 transition"
-        }
-      />
+      <div className="relative flex flex-col gap-5">
+        <div className="flex items-center justify-between">
+          <Icon className={accentStyles}>{title[0]}</Icon>
+          <span className="rounded-full px-3 py-1 text-xs font-bold bg-slate-100 text-slate-600 uppercase tracking-wider">
+            {tag}
+          </span>
+        </div>
 
-      <div className="relative flex items-start gap-4">
-        <Icon className="shrink-0">{title[0]}</Icon>
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-              {title}
-            </h3>
-            <span
-              className="rounded-full px-2 py-0.5 text-[11px] font-semibold
-                         bg-slate-100 text-slate-600 ring-1 ring-slate-200
-                         dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
-            >
-              {tag}
-            </span>
-          </div>
-
-          <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
+          <p className="text-sm leading-relaxed text-slate-600 mb-6 min-h-[60px]">
             {desc}
           </p>
 
           <button
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold
-                       text-slate-900 dark:text-white"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-white bg-slate-900 hover:bg-indigo-600 transition-colors"
             type="button"
             onClick={() => {
               if (to) navigate(to);
             }}
           >
-            Open
+            Open Module
             <span className="transition group-hover:translate-x-1">→</span>
           </button>
         </div>
-      </div>
-
-      {/* subtle animated shine */}
-      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition">
-        <div
-          className="absolute inset-0 translate-y-[-60%] group-hover:translate-y-[160%]
-                     duration-[1400ms]
-                     bg-[linear-gradient(to_bottom,transparent,rgba(255,255,255,0.08),transparent)]
-                     dark:bg-[linear-gradient(to_bottom,transparent,rgba(255,255,255,0.06),transparent)]"
-        />
       </div>
     </div>
   );
 }
 
 export default function Home() {
-  const { theme, setTheme } = useTheme();
   const year = useMemo(() => new Date().getFullYear(), []);
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      {/* Clean futuristic background */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute inset-0 bg-[radial-gradient(900px_450px_at_20%_10%,rgba(99,102,241,0.18),transparent_60%)] dark:bg-[radial-gradient(900px_450px_at_20%_10%,rgba(99,102,241,0.28),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(900px_450px_at_80%_20%,rgba(20,184,166,0.14),transparent_60%)] dark:bg-[radial-gradient(900px_450px_at_80%_20%,rgba(20,184,166,0.20),transparent_60%)]" />
-        <div
-          className="absolute inset-0 opacity-[0.06] dark:opacity-[0.09]
-                     bg-[linear-gradient(to_right,rgba(15,23,42,0.7)_1px,transparent_1px),linear-gradient(to_bottom,rgba(15,23,42,0.7)_1px,transparent_1px)]
-                     bg-[size:72px_72px]"
-        />
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
+      <Navbar />
+
+      {/* Futuristic Background Gradients (Full Width) */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-indigo-400/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-cyan-400/10 blur-[120px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)]" />
       </div>
 
-      {/* Navbar */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/70 backdrop-blur dark:border-white/10 dark:bg-slate-950/50">
-        <div className="mx-auto max-w-screen-2xl px-5 lg:px-10">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="h-9 w-9 rounded-2xl bg-slate-900 dark:bg-white" />
-                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-indigo-500/35 via-teal-400/15 to-transparent blur-lg" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold leading-none">EduMentor</p>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  AI-powered learning suite
-                </p>
-              </div>
-            </div>
-
-            <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700 dark:text-slate-200">
-              <a
-                href="#modules"
-                className="hover:text-slate-900 dark:hover:text-white transition"
-              >
-                Modules
-              </a>
-              <a
-                href="#about"
-                className="hover:text-slate-900 dark:hover:text-white transition"
-              >
-                About
-              </a>
-              <a
-                href="#contact"
-                className="hover:text-slate-900 dark:hover:text-white transition"
-              >
-                Contact
-              </a>
-            </nav>
-
-            <div className="flex items-center gap-2">
-              <a
-                href="#modules"
-                className="hidden sm:inline-flex items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold
-                           bg-slate-900 text-white hover:bg-slate-800
-                           dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition"
-              >
-                Explore
-              </a>
-
-              <button
-                type="button"
-                aria-label="Toggle theme"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="inline-flex items-center justify-center rounded-2xl px-3 py-2
-                           border border-slate-200/70 bg-white/70 hover:bg-white
-                           dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60
-                           transition"
-              >
-                {theme === "dark" ? "☀️" : "🌙"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="mx-auto max-w-screen-2xl px-5 lg:px-10 pt-12 lg:pt-16 pb-14">
-        <div className="grid lg:grid-cols-2 gap-10 items-center">
-          {/* Left */}
-          <div>
-            <div
-              className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold
-                         bg-white/70 text-slate-700 ring-1 ring-slate-200 backdrop-blur
-                         dark:bg-slate-950/40 dark:text-slate-200 dark:ring-white/10"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.65)]" />
-              Prototype-focused • PP1 ready UI
-            </div>
-
-            <h1 className="mt-5 text-4xl sm:text-5xl xl:text-6xl font-semibold tracking-tight text-slate-900 dark:text-white">
-              Learn faster with a{" "}
-              <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-500 bg-clip-text text-transparent">
-                futuristic AI mentor
-              </span>
-              .
-            </h1>
-
-            <p className="mt-5 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300 max-w-xl">
-              EduMentor combines a StudyBuddy Agent, Multi-View Explanations, a
-              3D Avatar Tutor, and an Adaptive Reinforcement Engine—built to
-              guide university students from confusion to mastery.
-            </p>
-
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              <a
-                href="#modules"
-                className="inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold
-                           bg-slate-900 text-white hover:bg-slate-800
-                           dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition"
-              >
-                View modules →
-              </a>
-
-              <a
-                href="#about"
-                className="inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold
-                           border border-slate-200/70 bg-white/70 hover:bg-white
-                           dark:border-white/10 dark:bg-slate-950/40 dark:hover:bg-slate-900/60 transition"
-              >
-                What is EduMentor?
-              </a>
-            </div>
-
-            <div className="mt-10 grid grid-cols-3 gap-3 max-w-lg">
-              {[
-                { k: "4", v: "Modules" },
-                { k: "Multi-View", v: "Explain" },
-                { k: "Adaptive", v: "Reinforce" },
-              ].map((s) => (
-                <div
-                  key={s.v}
-                  className="rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 backdrop-blur
-                             dark:border-white/10 dark:bg-slate-950/40"
-                >
-                  <p className="text-lg font-semibold">{s.k}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {s.v}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right visual */}
-          <div className="relative">
-            <div className="absolute -top-8 -left-8 h-28 w-28 rounded-full bg-indigo-500/20 blur-2xl animate-[float_7s_ease-in-out_infinite]" />
-            <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-teal-500/20 blur-2xl animate-[float_8s_ease-in-out_infinite]" />
-
-            <div
-              className="relative overflow-hidden rounded-[28px] border border-slate-200/70 bg-white/70 p-6
-                         shadow-[0_18px_80px_-45px_rgba(2,6,23,0.55)]
-                         backdrop-blur dark:border-white/10 dark:bg-slate-950/40"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400/70" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/70" />
-                </div>
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  Live UI preview
-                  <video
-              src="/demo.mp4"
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-auto object-cover"
-            />
-                </span>
-              </div>
-
-              <div className="mt-5 grid sm:grid-cols-2 gap-4 items-center">
-                <div className="space-y-3">
-                  <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Student asks
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                      “Explain recursion in 4 styles”
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-slate-200/70 bg-white/70 p-4 dark:border-white/10 dark:bg-slate-950/40">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      EduMentor responds
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {["Simple", "Analogy", "Code", "Visual"].map((m) => (
-                        <span
-                          key={m}
-                          className="rounded-full px-2.5 py-1 text-[11px] font-semibold
-                                     bg-slate-100 text-slate-700 ring-1 ring-slate-200
-                                     dark:bg-white/10 dark:text-slate-200 dark:ring-white/10"
-                        >
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <svg
-                    viewBox="0 0 400 320"
-                    className="w-full h-auto rounded-2xl border border-slate-200/70 bg-white/60 dark:border-white/10 dark:bg-white/5"
-                  >
-                    <defs>
-                      <radialGradient id="g1" cx="40%" cy="35%" r="60%">
-                        <stop offset="0%" stopColor="rgba(99,102,241,0.55)" />
-                        <stop offset="55%" stopColor="rgba(20,184,166,0.25)" />
-                        <stop offset="100%" stopColor="rgba(0,0,0,0)" />
-                      </radialGradient>
-                      <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="rgba(99,102,241,0.25)" />
-                        <stop offset="100%" stopColor="rgba(20,184,166,0.18)" />
-                      </linearGradient>
-                    </defs>
-
-                    <rect
-                      x="0"
-                      y="0"
-                      width="400"
-                      height="320"
-                      fill="url(#g2)"
-                    />
-                    <circle cx="190" cy="150" r="120" fill="url(#g1)" />
-                    <ellipse
-                      cx="270"
-                      cy="140"
-                      rx="58"
-                      ry="64"
-                      fill="rgba(255,255,255,0.35)"
-                    />
-                    <ellipse
-                      cx="250"
-                      cy="130"
-                      rx="10"
-                      ry="12"
-                      fill="rgba(15,23,42,0.65)"
-                    />
-                    <ellipse
-                      cx="292"
-                      cy="130"
-                      rx="10"
-                      ry="12"
-                      fill="rgba(15,23,42,0.65)"
-                    />
-                    <path
-                      d="M248 165 C265 180, 280 180, 298 165"
-                      stroke="rgba(15,23,42,0.55)"
-                      strokeWidth="6"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    <rect
-                      x="40"
-                      y="220"
-                      width="220"
-                      height="18"
-                      rx="9"
-                      fill="rgba(255,255,255,0.35)"
-                    />
-                    <rect
-                      x="40"
-                      y="250"
-                      width="180"
-                      height="18"
-                      rx="9"
-                      fill="rgba(255,255,255,0.25)"
-                    />
-                  </svg>
-
-                  <div
-                    className="absolute -top-3 -right-3 rounded-2xl px-3 py-2 text-xs font-semibold
-                               bg-slate-900 text-white dark:bg-white dark:text-slate-900
-                               shadow-[0_12px_45px_-20px_rgba(2,6,23,0.6)]
-                               animate-[float_6s_ease-in-out_infinite]"
-                  >
-                    3D Tutor
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Modules */}
-      <section
-        id="modules"
-        className="mx-auto max-w-screen-2xl px-5 lg:px-10 pb-16"
-      >
-        <div className="flex items-end justify-between gap-6 flex-wrap">
-          <div>
-            <p className="text-xs font-semibold tracking-[0.22em] uppercase text-slate-500 dark:text-slate-400">
-              Modules
-            </p>
-            <h2 className="mt-2 text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
-              One platform, four powerful engines
-            </h2>
-            <p className="mt-3 text-slate-600 dark:text-slate-300 max-w-2xl">
-              Consistent UI, shared theme, and scalable structure. We’ll connect
-              actual routes + backend later.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <ModuleCard
-            accent="teal"
-            title="StudyBuddy Agent"
-            tag="Guided Q&A"
-            desc="Ask questions on your lecture content and get structured help and next steps."
-            to="/study-buddy"
-          />
-
-          {/* ✅ THIS ONE NAVIGATES */}
-          <ModuleCard
-            accent="indigo"
-            title="Multi-View Explanation"
-            tag="4 Views"
-            desc="Simple • Analogy • Code • Summary explanations to match different learners."
-            to="/mveg/explain"
-          />
-
-          <ModuleCard
-            accent="sky"
-            title="3D Avatar Tutor"
-            tag="Interactive"
-            desc="A future-ready tutor interface for speech + expressions and better engagement."
-            to="/lesson"
-          />
-          <ModuleCard
-            accent="emerald"
-            title="ACE Reinforcement"
-            tag="Mastery"
-            desc="Adaptive reinforcement sessions, quizzes, and mastery tracking for retention."
-            to="/ace"
-          />
-        </div>
-      </section>
-
-      {/* About */}
-      <section
-        id="about"
-        className="mx-auto max-w-screen-2xl px-5 lg:px-10 pb-16"
-      >
-        <div className="rounded-3xl border border-slate-200/70 bg-white/70 p-8 md:p-10 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
-          <p className="text-xs font-semibold tracking-[0.22em] uppercase text-slate-500 dark:text-slate-400">
-            About
-          </p>
-          <h3 className="mt-2 text-2xl md:text-3xl font-semibold text-slate-900 dark:text-white">
-            Built for real student pain points
-          </h3>
-          <p className="mt-4 text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
-            EduMentor is a research-driven learning platform focused on clarity,
-            personalization, and retention. The design aims to be demo-friendly
-            (PP1) while staying scalable for full integration later.
-          </p>
-        </div>
-      </section>
-
-      {/* Contact */}
-      <section
-        id="contact"
-        className="mx-auto max-w-screen-2xl px-5 lg:px-10 pb-16"
-      >
-        <div className="rounded-3xl border border-slate-200/70 bg-white/70 p-8 md:p-10 backdrop-blur dark:border-white/10 dark:bg-slate-950/40">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+      <main className="relative z-10 pt-28">
+        {/* Hero Section */}
+        <section className="w-full px-3 sm:px-4 lg:px-5 xl:px-6 pt-12 lg:pt-20 pb-16">
+          <div className="mx-auto max-w-screen-2xl grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left Content */}
             <div>
-              <p className="text-xs font-semibold tracking-[0.22em] uppercase text-slate-500 dark:text-slate-400">
-                Contact
+              <h1 className="text-5xl sm:text-6xl xl:text-7xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+                Learn faster with a{" "}
+                <span className="bg-gradient-to-r from-indigo-600 to-cyan-500 bg-clip-text text-transparent">
+                  futuristic AI mentor.
+                </span>
+              </h1>
+
+              <p className="mt-6 text-lg sm:text-xl leading-relaxed text-slate-600 max-w-xl font-medium">
+                EduMentor combines a StudyBuddy Agent, Multi-View Explanations,
+                a 3D Avatar Tutor, and an Adaptive Reinforcement Engine—built to
+                guide university students from confusion to mastery.
               </p>
-              <h3 className="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">
-                Need a supervisor demo or prototype review?
-              </h3>
-              <p className="mt-3 text-slate-600 dark:text-slate-300">
-                Email us anytime:{" "}
-                <span className="font-semibold">edumentor.team@gmail.com</span>
+
+              <div className="mt-8 flex flex-col sm:flex-row gap-4">
+                <a
+                  href="#modules"
+                  className="inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-bold text-white bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-1"
+                >
+                  View modules →
+                </a>
+                <a
+                  href="#about"
+                  className="inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all shadow-sm"
+                >
+                  What is EduMentor?
+                </a>
+              </div>
+
+              <div className="mt-12 grid grid-cols-3 gap-4 max-w-lg">
+                {[
+                  { k: "4", v: "Modules" },
+                  { k: "Multi-View", v: "Explain" },
+                  { k: "Adaptive", v: "Reinforce" },
+                ].map((s) => (
+                  <div
+                    key={s.v}
+                    className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm text-center"
+                  >
+                    <p className="text-2xl font-black text-slate-900">{s.k}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-1">
+                      {s.v}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Visual Image / Video Wrapper */}
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+              <div className="absolute -inset-4 bg-gradient-to-r from-indigo-500 to-cyan-400 opacity-20 blur-2xl rounded-[40px] animate-[float_8s_ease-in-out_infinite]" />
+              <div className="relative overflow-hidden rounded-[32px] border-4 border-white bg-white shadow-2xl shadow-indigo-900/10">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                  <span className="w-3 h-3 rounded-full bg-rose-400" />
+                  <span className="w-3 h-3 rounded-full bg-amber-400" />
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
+                  <span className="ml-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    Live UI Preview
+                  </span>
+                </div>
+
+                {/* Replace src with your actual video or image path */}
+                <video
+                  src="/demo.mp4"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="w-full h-auto object-cover aspect-video bg-slate-100"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Modules Section */}
+        <section
+          id="modules"
+          className="w-full bg-white border-y border-slate-200 py-20 px-3 sm:px-4 lg:px-5 xl:px-6"
+        >
+          <div className="mx-auto max-w-screen-2xl">
+            <div className="max-w-2xl">
+              <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-indigo-600 mb-3">
+                Core Modules
+              </p>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                One platform, four powerful engines
+              </h2>
+              <p className="text-lg text-slate-600">
+                Consistent UI, shared theme, and scalable structure. Ready to
+                connect to the backend.
               </p>
             </div>
 
-            <a
-              href="mailto:edumentor.team@gmail.com"
-              className="inline-flex items-center justify-center rounded-2xl px-6 py-3 text-sm font-semibold
-                         bg-slate-900 text-white hover:bg-slate-800
-                         dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 transition"
-            >
-              Send email →
-            </a>
+            <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <ModuleCard
+                accent="cyan"
+                title="StudyBuddy Agent"
+                tag="Guided Q&A"
+                desc="Ask questions on your lecture content and get structured help and next steps."
+                to="/study-buddy"
+              />
+              <ModuleCard
+                accent="indigo"
+                title="Multi-View Explanation"
+                tag="4 Views"
+                desc="Simple • Analogy • Code • Summary explanations to match different learners."
+                to="/mveg/explain"
+              />
+              <ModuleCard
+                accent="violet"
+                title="3D Avatar Tutor"
+                tag="Interactive"
+                desc="A future-ready tutor interface for speech + expressions and better engagement."
+                to="/lesson"
+              />
+              <ModuleCard
+                accent="teal"
+                title="ACE Reinforcement"
+                tag="Mastery"
+                desc="Adaptive reinforcement sessions, quizzes, and mastery tracking for retention."
+                to="/ace"
+              />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        {/* About & Contact Section */}
+        <section
+          id="about"
+          className="w-full px-3 sm:px-4 lg:px-5 xl:px-6 py-20"
+        >
+          <div className="mx-auto max-w-screen-2xl grid md:grid-cols-2 gap-8">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/50">
+              <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-indigo-600 mb-3">
+                About
+              </p>
+              <h3 className="text-3xl font-extrabold text-slate-900 mb-4">
+                Built for real student pain points
+              </h3>
+              <p className="text-lg text-slate-600 leading-relaxed">
+                EduMentor is a research-driven learning platform focused on
+                clarity, personalization, and retention. The design aims to be
+                demo-friendly (PP1) while staying scalable for full integration
+                later.
+              </p>
+            </div>
+
+            <div
+              id="contact"
+              className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-indigo-900 to-slate-900 p-10 shadow-xl shadow-indigo-900/20 text-white"
+            >
+              <p className="text-sm font-extrabold tracking-[0.2em] uppercase text-cyan-400 mb-3">
+                Contact
+              </p>
+              <h3 className="text-3xl font-extrabold mb-4">
+                Need a prototype review?
+              </h3>
+              <p className="text-lg text-indigo-200 mb-8">
+                Email us anytime to schedule a demo or discuss integration
+                details.
+              </p>
+              <a
+                href="mailto:edumentor.team@gmail.com"
+                className="inline-flex items-center justify-center w-full sm:w-auto rounded-xl px-8 py-4 text-base font-bold text-slate-900 bg-white hover:bg-cyan-50 transition-colors shadow-lg"
+              >
+                edumentor.team@gmail.com →
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200/70 dark:border-white/10">
-        <div className="mx-auto max-w-screen-2xl px-5 lg:px-10 py-10 flex flex-col md:flex-row gap-4 md:items-center md:justify-between">
-          <p className="text-sm font-semibold">EduMentor</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+      <footer className="w-full border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-screen-2xl px-3 sm:px-4 lg:px-5 xl:px-6 py-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-indigo-500 to-cyan-400" />
+            <p className="text-lg font-bold text-slate-900">EduMentor</p>
+          </div>
+          <p className="text-sm font-medium text-slate-500">
             © {year} EduMentor Team • React + Vite + Tailwind
           </p>
         </div>
@@ -526,7 +269,7 @@ export default function Home() {
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-10px); }
+          50% { transform: translateY(-12px); }
         }
         html { scroll-behavior: smooth; }
       `}</style>

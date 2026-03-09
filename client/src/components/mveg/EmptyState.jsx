@@ -12,8 +12,8 @@ export default function EmptyState({ onPick }) {
   return (
     <div className="h-full flex flex-col items-center justify-center text-center px-6 bg-slate-50">
       {/* Icon */}
-      <div className="w-14 h-14 rounded-xl bg-slate-100 grid place-items-center mb-5">
-        <Sparkles className="text-slate-700" />
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 grid place-items-center mb-5 shadow-sm">
+        <Sparkles className="text-white" />
       </div>
 
       {/* Title */}
@@ -33,7 +33,7 @@ export default function EmptyState({ onPick }) {
           <button
             key={s}
             onClick={() => onPick(s)}
-            className="px-4 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-100 transition text-sm text-slate-700 shadow-sm"
+            className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition text-sm text-slate-700 shadow-sm"
           >
             {s}
           </button>
