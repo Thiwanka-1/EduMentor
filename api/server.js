@@ -14,7 +14,8 @@ import studyToolsRoutes from "./src/routes/studytools.routes.js";
 import buddychatRoutes from "./src/routes/chatRoutes.js";
 import docRoutes from "./src/routes/docRoutes.js";
 import sessionRoutes from "./src/routes/sessionRoutes.js";
-
+import dns from "node:dns/promises";
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 // Load environment variables
 dotenv.config();
 
