@@ -1,1 +1,1 @@
-export const WS_BASE = "ws://localhost:5001";
+export const WS_BASE = "ws://localhost:5000";
