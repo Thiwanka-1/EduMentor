@@ -14,7 +14,6 @@ import useAuth from "../../hooks/useAuth";
 export default function AceSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  // Removed logout from useAuth
   const { user } = useAuth();
 
   const navItems = [
@@ -50,7 +49,6 @@ export default function AceSidebar() {
     },
   ];
 
-  // Get initials for avatar
   const initials = user?.name
     ? user.name
         .split(" ")
@@ -61,18 +59,13 @@ export default function AceSidebar() {
     : "?";
 
   return (
-    <aside
-      className="w-64 px-5 py-6 border-r border-slate-200/70 dark:border-white/5
-                      bg-white dark:bg-[#070b18] flex flex-col"
-    >
+    <aside className="w-64 px-5 py-6 border-r border-slate-200 bg-white flex flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-400" />
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 shadow-sm" />
         <div>
-          <p className="font-semibold">ReinforceAI</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Adaptive Engine
-          </p>
+          <p className="font-bold text-slate-900">ReinforceAI</p>
+          <p className="text-xs text-slate-500">Adaptive Engine</p>
         </div>
       </div>
 
@@ -87,11 +80,11 @@ export default function AceSidebar() {
             <div
               key={item.label}
               onClick={() => navigate(item.to)}
-              className={`flex items-center gap-3 px-4 py-2 rounded-lg cursor-pointer
+              className={`flex items-center gap-3 px-4 py-2.5 rounded-xl cursor-pointer transition
                 ${
                   active
-                    ? "bg-indigo-600/15 text-indigo-500"
-                    : "text-slate-500 hover:text-black dark:hover:text-white"
+                    ? "bg-indigo-50 text-indigo-700 border border-indigo-100 font-semibold"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
             >
               {item.icon}
@@ -102,36 +95,21 @@ export default function AceSidebar() {
       </nav>
 
       {/* User */}
-      <div className="mt-auto pt-6 border-t border-slate-200/70 dark:border-white/5">
+      <div className="mt-auto pt-6 border-t border-slate-200">
         <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-cyan-500
-                        flex items-center justify-center text-white text-xs font-bold"
-          >
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user?.name || "User"}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              {user?.email || ""}
-            </p>
-          </div>
-          
-          {/* Replaced Logout with Profile and Home buttons */}
+          {/* Profile + Home */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => navigate("/profile")}
               title="Profile"
-              className="text-slate-400 hover:text-indigo-500 transition"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
             >
               <UserIcon size={16} />
             </button>
             <button
               onClick={() => navigate("/")}
               title="Home"
-              className="text-slate-400 hover:text-indigo-500 transition"
+              className="h-8 w-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
             >
               <Home size={16} />
             </button>

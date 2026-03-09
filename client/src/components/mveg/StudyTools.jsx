@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Sparkles, Wand2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useMveg } from "../../pages/mveg/mvegStore";
 import { getRelatedConcepts } from "../../services/mvegApi";
 
@@ -12,6 +13,7 @@ function complexityLabel(level = 55) {
 }
 
 export default function StudyTools({ answerText, drawer = false }) {
+  const navigate = useNavigate();
   const {
     strict,
     setStrict,
@@ -183,10 +185,11 @@ export default function StudyTools({ answerText, drawer = false }) {
           </p>
 
           <button
+            onClick={() => navigate("/ace")}
             className="mt-3 w-full h-10 rounded-xl text-white font-bold
-                             bg-gradient-to-r from-indigo-600 to-cyan-500
-                             hover:from-indigo-500 hover:to-cyan-400 transition
-                             flex items-center justify-center gap-2 shadow-sm"
+                       bg-gradient-to-r from-indigo-600 to-cyan-500
+                       hover:from-indigo-500 hover:to-cyan-400 transition
+                       flex items-center justify-center gap-2 shadow-sm"
           >
             <Wand2 size={16} /> Generate
           </button>
