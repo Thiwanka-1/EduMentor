@@ -125,18 +125,6 @@ export async function generateExplanation({
       code: mock?.answers?.code || "",
       summary: mock?.answers?.summary || "",
     };
-
-    return {
-      id: mock?._id || crypto.randomUUID?.() || String(Date.now()),
-      mode: mode || "simple",
-      content: views[mode] || views.simple || "",
-      answer: views[mode] || views.simple || "",
-      views,
-      question: message,
-      title: message.split(" ").slice(0, 6).join(" "),
-      createdAt: new Date().toISOString(),
-      outOfScope: false,
-    };
   }
 }
 

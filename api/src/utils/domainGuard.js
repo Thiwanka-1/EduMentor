@@ -121,6 +121,9 @@ const CS_IT_KEYWORDS = [
   "tutorial",
   "syllabus",
   "lab",
+  "Computer Science",
+  "Software Engineering",
+  "Information Technology",
 ];
 
 const ACADEMIC_INTENT_HINTS = [
@@ -203,6 +206,12 @@ const STRONG_NON_ACADEMIC_PATTERNS = [
   /\bhoroscope|astrology\b/i,
   /\bbitcoin price|stock price\b/i,
   /\btravel plan|hotel booking\b/i,
+  /\b(capital of|population of)\b/i,
+  /\b(animal|wildlife|zoo)\b/i,
+  /\b(dog|cat|lion|tiger|elephant)\b/i,
+  /\b(photosynthesis|dna|cell structure)\b/i,
+  /\b(weather|climate change)\b/i,
+  /\b(country|continent|river|mountain)\b/i,
 
   // fruits comparisons/questions
   /\b(compare|difference between)\s+(mango|apple|banana|orange|grape)\b/i,
