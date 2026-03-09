@@ -33,7 +33,7 @@ import tutorWSConnection from "./src/ws/wsTutor.js";
 import lessonWSConnection from "./src/ws/wsLesson.js";
 import audioWSConnection from "./src/ws/wsAudio.js";
 import { createSession } from "./src/services/sessionService.js";
-
+import sttWSConnection from "./src/ws/wsSTT.js"; //
 /* ============================================================
    EXPRESS INITIAL SETUP
 ============================================================ */
@@ -227,6 +227,8 @@ wss.on("connection", (ws, req) => {
     return audioWSConnection(ws);
   }
 
+  if (p.startsWith("/ws/stt")) return sttWSConnection(ws); //
+  
   ws.send(JSON.stringify({ error: "Invalid WS endpoint" }));
   ws.close();
 });

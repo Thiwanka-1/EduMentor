@@ -2,8 +2,8 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { pipeline } from "@xenova/whisper-tiny.en";
-
+//import { pipeline } from "@xenova/whisper-tiny.en";
+import { pipeline } from "@xenova/transformers"; // ✅ Correct
 // Base64 → Buffer helper
 function base64ToBuffer(base64) {
   return Buffer.from(base64, "base64");

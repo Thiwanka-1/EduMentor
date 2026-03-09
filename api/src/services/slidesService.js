@@ -4,22 +4,7 @@ import path from "path";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import mammoth from "mammoth";
-import { createRequire } from "module";
-
-const require = createRequire(import.meta.url);
-
-let pdfParseFn = null;
-try {
-  const mod = require("pdf-parse");
-  pdfParseFn = typeof mod === "function" ? mod : mod?.default;
-} catch {}
-
-try {
-  if (!pdfParseFn) {
-    const mod2 = require("pdf-parse/lib/pdf-parse.js");
-    pdfParseFn = typeof mod2 === "function" ? mod2 : mod2?.default;
-  }
-} catch {}
+import pdfParse from "pdf-parse-debugging-disabled"; // ✅ Using the safe package
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), "output", "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -34,37 +19,41 @@ function extOf(name = "") {
 async function extractText({ filepath, mimetype, originalname }) {
   const ext = extOf(originalname);
 
-  // txt / md
-  if (mimetype?.startsWith("text/") || ext === ".txt" || ext === ".md") {
-    return fs.readFileSync(filepath, "utf8");
-  }
+  try {
+    // txt / md
+    if (mimetype?.startsWith("text/") || ext === ".txt" || ext === ".md") {
+      return fs.readFileSync(filepath, "utf8");
+    }
 
-  // pdf
-  if (mimetype === "application/pdf" || ext === ".pdf") {
-    if (!pdfParseFn) throw new Error("pdf-parse not available. Reinstall: npm i pdf-parse");
-    const buf = fs.readFileSync(filepath);
-    const parsed = await pdfParseFn(buf);
-    return parsed?.text || "";
-  }
+    // pdf
+    if (mimetype === "application/pdf" || ext === ".pdf") {
+      const buf = fs.readFileSync(filepath);
+      const parsed = await pdfParse(buf);
+      return parsed?.text || "";
+    }
 
-  // docx
-  if (
-    mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-    ext === ".docx"
-  ) {
-    const res = await mammoth.extractRawText({ path: filepath });
-    return res?.value || "";
-  }
+    // docx
+    if (
+      mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+      ext === ".docx"
+    ) {
+      const res = await mammoth.extractRawText({ path: filepath });
+      return res?.value || "";
+    }
 
-  // pptx not implemented (return empty)
-  if (
-    mimetype === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
-    ext === ".pptx"
-  ) {
+    // pptx not implemented
+    if (
+      mimetype === "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+      ext === ".pptx"
+    ) {
+      return "";
+    }
+
     return "";
+  } catch (err) {
+    console.error(`❌ Error extracting text from ${originalname}:`, err);
+    throw new Error(`Could not read document text: ${err.message}`);
   }
-
-  return "";
 }
 
 // multer disk storage
