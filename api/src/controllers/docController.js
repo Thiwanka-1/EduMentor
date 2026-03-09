@@ -1,4 +1,4 @@
-// controllers/docController.js
+// api/controllers/docController.js
 import "../config/env.js";
 import fs from "fs/promises";
 import path from "path";
@@ -74,9 +74,12 @@ export function buildContextText(blocks) {
 // ---------- upload TEXT ----------
 export async function uploadTextDoc(req, res) {
   try {
-    const { userId, sessionId, title, text } = req.body;
-    if (!userId || !sessionId || !title || !text) {
-      return res.status(400).json({ error: "userId, sessionId, title, text are required" });
+    // 🚨 SECURE: Grab userId from the cookie
+    const userId = req.user._id;
+    const { sessionId, title, text } = req.body;
+    
+    if (!sessionId || !title || !text) {
+      return res.status(400).json({ error: "sessionId, title, text are required" });
     }
 
     const chunks = chunkText(text);
@@ -120,12 +123,14 @@ function l2Normalize(vec) {
 
 export async function uploadPdfDoc(req, res) {
   try {
-    const { userId, sessionId, title } = req.body;
+    // 🚨 SECURE: Grab userId from the cookie
+    const userId = req.user._id;
+    const { sessionId, title } = req.body;
 
-    if (!userId || !sessionId || !title) {
+    if (!sessionId || !title) {
       return res
         .status(400)
-        .json({ error: "userId, sessionId, title are required" });
+        .json({ error: "sessionId and title are required" });
     }
 
     if (!req.file?.path) {
@@ -209,6 +214,7 @@ export async function uploadPdfDoc(req, res) {
     return res.status(500).json({ error: "Server error while uploading PDF." });
   }
 }
+
 // ---------- retrieve (SESSION-BASED!) ----------
 export async function retrieveStudyContext(userId, sessionId, query, topK = 5) {
   const chunks = await DocChunk.find({ userId, sessionId })

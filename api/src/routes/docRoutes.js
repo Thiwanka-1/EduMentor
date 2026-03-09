@@ -1,10 +1,11 @@
-//api/routes/docRoutes.js
+// api/routes/docRoutes.js
 import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
 import { uploadPdfDoc, uploadTextDoc } from "../controllers/docController.js";
+import { protect } from "../middleware/auth.middleware.js"; // 🚨 ADD THIS
 
 const router = express.Router();
 
@@ -21,7 +22,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-router.post("/text", uploadTextDoc);
-router.post("/pdf", upload.single("file"), uploadPdfDoc);
+// 🚨 Apply the protect middleware so req.user exists!
+router.post("/text", protect, uploadTextDoc);
+router.post("/pdf", protect, upload.single("file"), uploadPdfDoc);
 
 export default router;
