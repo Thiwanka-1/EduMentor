@@ -3,7 +3,7 @@ import { Sparkles, Wand2 } from "lucide-react";
 import { useMveg } from "../../pages/mveg/mvegStore";
 import { getRelatedConcepts } from "../../services/mvegApi";
 
-const MODULES = ["ALL", "AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
+const MODULES = ["AI", "ML", "DBMS", "OOP", "DSA", "SE", "NET", "OS"];
 
 function complexityLabel(level = 55) {
   if (level <= 30) return "Novice";
