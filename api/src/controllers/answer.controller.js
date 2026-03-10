@@ -1,5 +1,7 @@
 import Quiz from "../models/quiz.model.js";
 import Attempt from "../models/attempt.model.js";
+import Material from "../models/material.model.js";
+import StudentProfile from "../models/studentProfile.model.js";
 
 /**
  * POST /api/answers/submit
@@ -81,6 +83,32 @@ export async function submitAnswers(req, res, next) {
     console.log(
       `   Attempt saved to MongoDB: ${attempt._id} (Score: ${score}%)`
     );
+
+    // Sync weak/strong topics in StudentProfile based on quiz score
+    const resolvedUserId = (req.user?._id || userId)?.toString();
+    if (resolvedUserId) {
+      try {
+        const material = await Material.findById(quiz.materialId).select("title").lean();
+        const topic = material?.title;
+        if (topic) {
+          if (score < 60) {
+            await StudentProfile.findOneAndUpdate(
+              { userId: resolvedUserId },
+              { $addToSet: { weakTopics: topic }, $pull: { strongTopics: topic } },
+              { upsert: true }
+            );
+          } else if (score >= 80) {
+            await StudentProfile.findOneAndUpdate(
+              { userId: resolvedUserId },
+              { $addToSet: { strongTopics: topic }, $pull: { weakTopics: topic } },
+              { upsert: true }
+            );
+          }
+        }
+      } catch (profileErr) {
+        console.error("Failed to update StudentProfile topics:", profileErr.message);
+      }
+    }
 
     res.json({
       success: true,
