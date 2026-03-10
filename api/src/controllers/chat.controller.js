@@ -20,10 +20,19 @@ const MODE_INSTRUCTIONS = {
   summary: "Give a concise bullet-point summary. Max 8 bullets.",
 };
 
-const client = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.HF_TOKEN,
-});
+let _client = null;
+function getClient() {
+  if (!process.env.HF_TOKEN) {
+    throw new Error("HF_TOKEN is not set. Add it to your .env file.");
+  }
+  if (!_client) {
+    _client = new OpenAI({
+      baseURL: "https://router.huggingface.co/v1",
+      apiKey: process.env.HF_TOKEN,
+    });
+  }
+  return _client;
+}
 
 function generateTitle(question) {
   return question.split(" ").slice(0, 6).join(" ");
@@ -68,7 +77,7 @@ function complexityRules(label) {
 ========================= */
 async function classifyAcademicScopeWithLLM(message) {
   try {
-    const completion = await client.chat.completions.create({
+    const completion = await getClient().chat.completions.create({
       model: process.env.HF_MODEL,
       messages: [
         {
@@ -210,7 +219,7 @@ ${styleInstruction}`,
     },
   ];
 
-  const completion = await client.chat.completions.create({
+  const completion = await getClient().chat.completions.create({
     model: process.env.HF_MODEL,
     messages,
     max_tokens: 650,
