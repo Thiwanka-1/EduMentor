@@ -46,9 +46,14 @@ function needsCheckIn(profile) {
   return hoursSince > 18;
 }
 
-async function getOrCreateProfile(userId) {
+async function getOrCreateProfile(userId, displayName) {
   let profile = await StudentProfile.findOne({ userId });
-  if (!profile) profile = await StudentProfile.create({ userId, motivationLevel: 3 });
+  if (!profile) {
+    profile = await StudentProfile.create({ userId, motivationLevel: 3, displayName: displayName || "" });
+  } else if (!profile.displayName && displayName) {
+    profile.displayName = displayName;
+    await profile.save();
+  }
   return profile;
 }
 
@@ -174,7 +179,7 @@ export async function chatWithBuddy(req, res) {
     if (!session) return res.status(404).json({ error: "Session not found for this user." });
 
     // profile updates
-    const profile = await getOrCreateProfile(userId);
+    const profile = await getOrCreateProfile(userId, req.user?.name || "");
 
     const mood = detectMood(message);
     const intent = detectIntent(message);
