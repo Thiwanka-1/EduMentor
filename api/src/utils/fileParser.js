@@ -1,13 +1,7 @@
 import fs from "fs";
 import path from "path";
 import mammoth from "mammoth";
-import { createRequire } from "module"; // <-- ADDED: Imports Node's require utility
-
-// <-- ADDED: Creates a require function for this specific file
-const require = createRequire(import.meta.url); 
-
-// <-- CHANGED: We now safely 'require' pdf-parse instead of importing it
-const pdfParse = require("pdf-parse"); 
+import pdfParse from "pdf-parse-new"; // ✅ Clean, native ES Module import!
 
 /**
  * Extract text from a single file based on its type.
