@@ -4,10 +4,6 @@ dotenv.config();
 import fetch from "node-fetch";
 import { OpenAI } from "openai";
 import Explanation from "../models/Explanation.js";
-import {
-  evaluateAcademicScope,
-  buildOutOfScopeMessage,
-} from "../utils/domainGuard.js";
 
 const ALL_MODES = ["simple", "analogy", "code", "summary"];
 
@@ -24,6 +20,11 @@ const client = new OpenAI({
   baseURL: "https://router.huggingface.co/v1",
   apiKey: process.env.HF_TOKEN,
 });
+
+const CLASSIFIER_API_URL =
+  process.env.CLASSIFIER_API_URL || "http://127.0.0.1:8002";
+const RAG_API_URL = process.env.RAG_API_URL || "http://127.0.0.1:8001";
+const CLASSIFIER_THRESHOLD = Number(process.env.CLASSIFIER_THRESHOLD || 0.8);
 
 function generateTitle(question) {
   return question.split(" ").slice(0, 6).join(" ");
@@ -64,56 +65,49 @@ function complexityRules(label) {
 }
 
 /* =========================
-   Scope classifier fallback
+   Friendly out-of-scope response
 ========================= */
-async function classifyAcademicScopeWithLLM(message) {
-  try {
-    const completion = await client.chat.completions.create({
-      model: process.env.HF_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `
-You are a strict query classifier for an academic learning system (MVEG).
+function buildFriendlyOutOfScopeContent() {
+  return `### This question is outside MVEG's academic scope
 
-Scope allowed:
-- Computer Science
-- Software Engineering
-- Information Technology academic topics only
+MVEG is designed for **Computer Science, Software Engineering, and IT learning support**.
 
-Classify the user query into ONE label only:
-- ACADEMIC_CS_IT
-- ACADEMIC_NON_CS
-- NON_ACADEMIC
+Your current question does not appear to belong to that academic scope, so I cannot generate an explanation for it here.
 
-Rules:
-- General object comparisons (fruits/foods/daily life) are NON_ACADEMIC
-- Return ONLY the label, no explanation.
-          `.trim(),
-        },
-        { role: "user", content: message },
-      ],
-      max_tokens: 10,
-      temperature: 0,
-    });
+**How to ask a better question**
+- Ask about programming, databases, networking, operating systems, software engineering, AI/ML, or web topics.
+- Try academic prompts like **explain**, **compare**, **summarize**, or **give an example**.
+- If your question is technical, include the subject or module name.
 
-    const label = (completion?.choices?.[0]?.message?.content || "")
-      .trim()
-      .toUpperCase();
+**Try one of these instead**
+- Explain polymorphism in Java
+- Compare TCP and UDP
+- What is normalization in DBMS?
+- Explain binary search tree with an example`;
+}
 
-    if (
-      label === "ACADEMIC_CS_IT" ||
-      label === "ACADEMIC_NON_CS" ||
-      label === "NON_ACADEMIC"
-    ) {
-      return label;
-    }
+/* =========================
+   Classifier API call
+========================= */
+async function classifyWithModel(message) {
+  const res = await fetch(`${CLASSIFIER_API_URL}/classify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: message }),
+  });
 
-    return "NON_ACADEMIC";
-  } catch (e) {
-    console.error("LLM scope classifier failed:", e.message);
-    return "NON_ACADEMIC";
+  if (!res.ok) {
+    throw new Error(`Classifier API failed with status ${res.status}`);
   }
+
+  const data = await res.json();
+
+  return {
+    label: data.label,
+    inScopeConfidence: Number(data.in_scope_confidence || 0),
+    outScopeConfidence: Number(data.out_of_scope_confidence || 0),
+    threshold: Number(data.threshold || CLASSIFIER_THRESHOLD),
+  };
 }
 
 /* =========================
@@ -145,7 +139,7 @@ Keep the answer academically useful, clear, and syllabus-friendly.
     };
   }
 
-  const retrievalRes = await fetch("http://localhost:8001/retrieve", {
+  const retrievalRes = await fetch(`${RAG_API_URL}/retrieve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -244,33 +238,55 @@ export async function generateAndSave(req, res) {
     const cleanMessage = String(message).trim();
     const selectedMode = normalizeMode(mode);
 
-    const ruleCheck = evaluateAcademicScope(cleanMessage);
-    let allowed = ruleCheck.allowed;
+    /* =========================
+       1) classifier decides scope
+    ========================= */
+    let cls;
+    try {
+      cls = await classifyWithModel(cleanMessage);
+    } catch (err) {
+      console.error("Classifier service error:", err.message);
 
-    if (allowed === null) {
-      const label = await classifyAcademicScopeWithLLM(cleanMessage);
-      allowed = label === "ACADEMIC_CS_IT";
+      return res.status(503).json({
+        error: "Scope classifier unavailable",
+        message:
+          "The academic scope checking service is temporarily unavailable. Please try again in a moment.",
+      });
     }
 
+    const allowed =
+      cls.label === "in_scope" &&
+      cls.inScopeConfidence >= (cls.threshold || CLASSIFIER_THRESHOLD);
+
     if (!allowed) {
-      const payload = buildOutOfScopeMessage(cleanMessage);
+      const friendlyContent = buildFriendlyOutOfScopeContent();
 
       return res.status(200).json({
         id: null,
         mode: selectedMode,
-        content: `### Out of MVEG Academic Scope\n\n${payload.message}\n\n**Try asking something like:**\n- ${payload.examples.join(
-          "\n- ",
-        )}`,
+        content: friendlyContent,
         answer: "Out of scope",
-        views: { simple: "", analogy: "", code: "", summary: "" },
+        views: {
+          simple: "",
+          analogy: "",
+          code: "",
+          summary: "",
+        },
         outOfScope: true,
-        outOfScopePayload: payload,
+        outOfScopePayload: {
+          classifierSource: "trained_classifier",
+          classifierConfidence: cls.inScopeConfidence,
+          classifierRaw: cls,
+        },
         question: cleanMessage,
         title: "Out of scope request",
         createdAt: new Date().toISOString(),
       });
     }
 
+    /* =========================
+       2) build prompt
+    ========================= */
     const basePrompt = await buildBasePrompt({
       message: cleanMessage,
       strict: Boolean(strict),
@@ -278,6 +294,9 @@ export async function generateAndSave(req, res) {
       complexity,
     });
 
+    /* =========================
+       3) selected view first
+    ========================= */
     const selectedAnswer = await generateForMode({
       message: cleanMessage,
       strict: Boolean(strict),
@@ -285,6 +304,9 @@ export async function generateAndSave(req, res) {
       basePrompt,
     });
 
+    /* =========================
+       4) remaining views
+    ========================= */
     const remainingModes = ALL_MODES.filter((m) => m !== selectedMode);
 
     const remainingResults = await Promise.all(
@@ -311,8 +333,11 @@ export async function generateAndSave(req, res) {
       views[m] = content;
     }
 
+    /* =========================
+       5) save
+    ========================= */
     const doc = await Explanation.create({
-      user: req.user._id, // ✅ save under logged-in user
+      user: req.user._id,
       question: cleanMessage,
       title: generateTitle(cleanMessage),
       mode: selectedMode,
@@ -336,6 +361,8 @@ export async function generateAndSave(req, res) {
       createdAt: doc.createdAt,
       module,
       complexity,
+      classifierSource: "trained_classifier",
+      classifierConfidence: cls.inScopeConfidence,
     });
   } catch (err) {
     console.error("Chat error:", err);

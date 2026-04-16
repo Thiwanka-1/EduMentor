@@ -1,0 +1,61 @@
+# =========================
+# Python / Virtualenv
+# =========================
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+
+# =========================
+# OS / Editor
+# =========================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# =========================
+# Secrets / Env
+# =========================
+.env
+.env.*
+*.key
+*.pem
+
+# =========================
+# Large / Generated Data
+# =========================
+# Raw PDFs (keep out of git, too large)
+raw/
+**/*.pdf
+
+# Extracted text + chunks + indexes (generated)
+processed/
+chunks/
+index/
+
+# If you want to keep folder structure only, add empty .gitkeep files
+# and remove these ignores for folders you want tracked.
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# Optional: Model cache (can be huge)
+# =========================
+# sentence-transformers / huggingface cache
+.cache/
+huggingface/
+transformers/
+data/
+models/
