@@ -12,7 +12,7 @@ import { retrieveStudyContext, buildContextText } from "./docController.js";
 // ==========================================
 /**
  * Uses Few-Shot Prompting to force the LLM to extract accurate JSON data.
- * Fixes issues with motivation scaling and topic recognition.
+ * Changed to Absolute State Tracking for 100% reliable motivation updates.
  */
 async function runShadowObserver(message, history) {
   const prompt = `
@@ -20,33 +20,39 @@ You are an internal NLP analysis engine for a student support system.
 Analyze the user's latest message. You MUST respond with ONLY a valid JSON object. No markdown, no explanations.
 
 Rules:
-1. "mood": "happy", "sad", "stressed", "tired", or "neutral". (Extreme distress = "sad").
-2. "motivationChange": Integer from -4 to +4.
-   - "-4" for severe distress, giving up, or suicidal thoughts.
-   - "-1" or "-2" for general stress, tiredness, or sadness.
-   - "0" for neutral chat.
-   - "+1" or "+2" for feeling better, refreshed, or ok.
-   - "+3" or "+4" for extreme motivation (e.g., "work non stop", "super ready").
+1. "mood": "happy", "sad", "stressed", "tired", or "neutral".
+2. "motivationLevel": Integer from 1 to 5 representing their CURRENT state.
+   - 1: Giving up, severe distress, zero motivation.
+   - 2: Low motivation, procrastinating, tired, slightly stressed.
+   - 3: Neutral baseline, chilling, normal chat.
+   - 4: Good motivation, ready to study, positive.
+   - 5: Extreme motivation, working non-stop, hyper-focused.
 3. "intent": "study", "chat", or "mixed".
 4. "newWeakTopic": Topic they struggle with or say they don't know (max 3 words). null if none.
 5. "newStrongTopic": Topic they are good at, explicitly understand, or say they like (max 3 words). null if none.
 6. "exam": If they mention an exam, return {"subject": "Topic or 'Unknown'", "date": "Timeframe or 'Upcoming'"}. null if no exam mentioned.
 
 --- EXAMPLES ---
-User: "feel like killing myself"
-{"mood":"sad","motivationChange":-4,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
+User: "hi"
+{"mood":"neutral","motivationLevel":3,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
 
-User: "no its ok all good i am ok now i am refreshed and ready to work"
-{"mood":"happy","motivationChange":2,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
+User: "good"
+{"mood":"happy","motivationLevel":4,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
 
-User: "I will work non stop for the whole week to tackle this lecture module"
-{"mood":"happy","motivationChange":3,"intent":"study","newWeakTopic":null,"newStrongTopic":null,"exam":null}
+User: "nope just chilling"
+{"mood":"neutral","motivationLevel":3,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
 
-User: "but i am really good at java programming"
-{"mood":"happy","motivationChange":1,"intent":"study","newWeakTopic":null,"newStrongTopic":"Java Programming","exam":null}
+User: "but i start studing for the exam now and will do until i got everything sorted"
+{"mood":"happy","motivationLevel":5,"intent":"study","newWeakTopic":null,"newStrongTopic":null,"exam":{"subject":"Unknown","date":"Upcoming"}}
+
+User: "i will for this whole week for the exam"
+{"mood":"happy","motivationLevel":5,"intent":"study","newWeakTopic":null,"newStrongTopic":null,"exam":{"subject":"Unknown","date":"Upcoming"}}
 
 User: "i do not know anything about OOP because the exam is about OOP"
-{"mood":"stressed","motivationChange":-1,"intent":"study","newWeakTopic":"OOP","newStrongTopic":null,"exam":{"subject":"OOP","date":"Upcoming"}}
+{"mood":"stressed","motivationLevel":2,"intent":"study","newWeakTopic":"OOP","newStrongTopic":null,"exam":{"subject":"OOP","date":"Upcoming"}}
+
+User: "feel like killing myself"
+{"mood":"sad","motivationLevel":1,"intent":"chat","newWeakTopic":null,"newStrongTopic":null,"exam":null}
 --- END EXAMPLES ---
 
 User's Latest Message: "${message}"
@@ -58,19 +64,22 @@ Output strictly in this JSON format:
     const rawResponse = await generateBuddyCompletion({
       messages: [{ role: "system", content: prompt }],
       max_tokens: 150,
-      temperature: 0.1, // Keep this very low for logical consistency
+      temperature: 0.0, // Dropped to 0.0 for maximum determinism
       top_p: 0.9,
     });
 
-    // Extract everything between the first { and the last }
-    const jsonMatch = rawResponse.match(/\{[\s\S]*\}/);
+    // Strip markdown backticks if LLaMA randomly adds them, then parse
+    let cleanText = rawResponse.replace(/```json/gi, "").replace(/```/g, "").trim();
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+    
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
     throw new Error("No JSON found in response");
   } catch (error) {
     console.error("🟡 Shadow Observer parsing failed, using fallbacks:", error.message);
-    return { mood: "neutral", motivationChange: 0, intent: "chat", newWeakTopic: null, newStrongTopic: null, exam: null };
+    // Return nulls so we don't overwrite valid DB data with fallbacks if an error occurs
+    return { mood: null, motivationLevel: null, intent: "chat", newWeakTopic: null, newStrongTopic: null, exam: null };
   }
 }
 
@@ -85,7 +94,7 @@ function needsCheckIn(profile) {
 
 async function getOrCreateProfile(userId) {
   let profile = await StudentProfile.findOne({ userId });
-  if (!profile) profile = await StudentProfile.create({ userId, motivationLevel: 3 });
+  if (!profile) profile = await StudentProfile.create({ userId, motivationLevel: 3, lastMood: "neutral" });
   return profile;
 }
 
@@ -209,16 +218,13 @@ export async function chatWithBuddy(req, res) {
     const observerData = await runShadowObserver(message, history);
 
     // 3. Update Database with Extracted Insights
-    // Only update mood if the LLM successfully detected one, otherwise keep the old one
-    if (observerData.mood && observerData.mood !== "neutral") {
+    // Direct Absolute Assignment instead of messy math
+    if (observerData.mood) {
         profile.lastMood = observerData.mood;
-    } else if (observerData.mood === "neutral" && observerData.motivationChange > 0) {
-        profile.lastMood = "happy"; // If they are neutral but motivation goes up, they are happy/good
     }
-
-    // Safely update motivation between 1 and 5 (allowing larger jumps now)
-    const newMotivation = profile.motivationLevel + observerData.motivationChange;
-    profile.motivationLevel = Math.max(1, Math.min(5, newMotivation));
+    if (observerData.motivationLevel) {
+        profile.motivationLevel = observerData.motivationLevel;
+    }
 
     // Update Academic Knowledge Graph
     profile.weakTopics = updateUniqueList(profile.weakTopics, observerData.newWeakTopic);
@@ -282,16 +288,110 @@ export async function chatWithBuddy(req, res) {
       mood: profile.lastMood,
       motivationLevel: profile.motivationLevel,
       contextUsed: contextBlocks.length > 0,
-      intent: observerData.intent,
+      intent: observerData.intent || "chat",
       extractedInsights: {
-        newWeakTopic: observerData.newWeakTopic,
-        newStrongTopic: observerData.newStrongTopic,
-        exam: observerData.exam
+        newWeakTopic: observerData.newWeakTopic || null,
+        newStrongTopic: observerData.newStrongTopic || null,
+        exam: observerData.exam || null
       }
     });
 
   } catch (err) {
     console.error("chatWithBuddy error:", err);
     return res.status(500).json({ error: "Server error" });
+  }
+}
+
+// Add this to the bottom of controllers/chatController.js
+
+export async function generateSessionSummary(req, res) {
+  try {
+    // 🚨 SECURE: Grab userId from the verified session cookie
+    const userId = req.user._id;
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "sessionId is required" });
+    }
+
+    // 1. Fetch the entire chat history for this specific session
+    // We sort by createdAt: 1 to read it chronologically from start to finish
+    const historyDocs = await ConversationMessage.find({ userId, sessionId })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    // 2. Filter out system messages and format it like a script
+    const transcript = historyDocs
+      .filter((msg) => msg.role !== "system")
+      .map((msg) => `${msg.role === "user" ? "Student" : "StudyBuddy"}: ${msg.content}`)
+      .join("\n\n");
+
+    if (!transcript.trim()) {
+      return res.status(400).json({ error: "Not enough chat history to summarize yet." });
+    }
+
+    // 3. The Synthesizer Prompt
+    // We force a strict Markdown structure so it looks perfect in your UI
+    const prompt = `
+You are an expert academic synthesizer. Review the following transcript of a study session between a Student and a StudyBuddy. 
+Your task is to generate a concise, highly structured "Short Note" study guide based ONLY on what was discussed.
+
+Format the output strictly in Markdown with these exact sections. Do not include any other text outside of this structure.
+
+### 📌 Session Overview
+(1-2 sentences summarizing the main topic)
+
+### 🔑 Key Concepts Covered
+(Brief bullet points of definitions or facts explained in the chat)
+
+### 🚀 Progress Made
+(What the student successfully understood based on the transcript)
+
+### ⚠️ Needs Review
+(Concepts the student struggled with and should revisit)
+
+Transcript:
+${transcript}
+`.trim();
+
+    console.log("🟡 Generating Session Summary for session:", sessionId);
+
+    // 4. Call your local LLaMA model
+    // Temperature is very low (0.2) so it doesn't hallucinate facts outside the transcript
+    const rawSummary = await generateBuddyCompletion({
+      messages: [{ role: "system", content: prompt }],
+      max_tokens: 500,
+      temperature: 0.2, 
+      top_p: 0.9,
+    });
+
+    if (!rawSummary) {
+      throw new Error("LLM returned an empty summary.");
+    }
+
+    // 5. Send it back to the frontend
+    return res.json({ summary: rawSummary.trim() });
+
+  } catch (err) {
+    console.error("generateSessionSummary error:", err);
+    return res.status(500).json({ error: "Server error generating summary" });
+  }
+}
+
+// Add to the bottom of controllers/chatController.js
+
+export async function getStudentKnowledge(req, res) {
+  try {
+    const userId = req.user._id;
+    // We already have getOrCreateProfile from earlier in the file!
+    const profile = await getOrCreateProfile(userId); 
+    
+    return res.json({
+      weakTopics: profile.weakTopics || [],
+      strongTopics: profile.strongTopics || []
+    });
+  } catch (err) {
+    console.error("getStudentKnowledge error:", err);
+    return res.status(500).json({ error: "Failed to fetch knowledge graph data" });
   }
 }

@@ -1,5 +1,6 @@
 // client/src/components/Sidebar.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
 export default function Sidebar({ uiProps, sessionProps, uploadProps }) {
   const { isMobileMenuOpen, setIsMobileMenuOpen } = uiProps;
@@ -9,7 +10,9 @@ export default function Sidebar({ uiProps, sessionProps, uploadProps }) {
   } = sessionProps;
   const { 
     handlePdfUpload, pdfTitle, setPdfTitle, setPdfFile, isUploading, 
-    handleNotesUpload, notesTitle, setNotesTitle, notesText, setNotesText, uploadStatus 
+    handleNotesUpload, notesTitle, setNotesTitle, notesText, setNotesText, uploadStatus,
+    isGeneratingSummary, handleGenerateSummary, 
+    setIsNotesModalOpen // 👉 New prop to open the notebook modal
   } = uploadProps;
 
   // The signature gradient from your screenshots
@@ -116,6 +119,24 @@ export default function Sidebar({ uiProps, sessionProps, uploadProps }) {
         </div>
       </div>
 
+<div className="mb-4 mt-2">
+  <Link 
+    to="/knowledge-tree" 
+    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold rounded-xl transition-all shadow-md shadow-slate-900/20 border border-slate-700 group"
+  >
+    <svg className="w-4 h-4 text-emerald-400 group-hover:animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>
+    View Knowledge Tree
+  </Link>
+</div>
+<div className="mb-4">
+  <Link 
+    to="/study-hub" 
+    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white hover:bg-indigo-50 text-indigo-600 text-sm font-bold rounded-xl transition-all border border-indigo-100 group shadow-sm"
+  >
+    <svg className="w-4 h-4 text-indigo-400 group-hover:text-indigo-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+    Find Study Partners
+  </Link>
+</div>
       {/* Uploads Section */}
       <div className="space-y-4 overflow-y-auto flex-none pb-4">
         <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm relative overflow-hidden">
@@ -165,21 +186,42 @@ export default function Sidebar({ uiProps, sessionProps, uploadProps }) {
               value={notesTitle}
               onChange={(e) => setNotesTitle(e.target.value)}
             />
+            
+            <button
+              type="button"
+              onClick={handleGenerateSummary}
+              disabled={isGeneratingSummary || !activeSessionId}
+              className="w-full text-xs font-bold rounded-xl px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition-colors disabled:opacity-50 flex justify-center items-center gap-2"
+            >
+              {isGeneratingSummary ? "Analyzing Chat..." : "✨ Auto-Generate Summary"}
+            </button>
+
             <textarea
-              rows={3}
+              rows={4}
               className="w-full rounded-xl bg-slate-50 border border-slate-200 px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none text-slate-900 placeholder:text-slate-400"
-              placeholder="Paste short notes here…"
+              placeholder="Paste short notes here or Auto-Generate from chat…"
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
             />
+            
             <button
               type="submit"
-              disabled={isUploading || !activeSessionId}
+              disabled={isUploading || !activeSessionId || !notesText.trim()}
               className={`w-full text-xs font-bold rounded-xl px-4 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed ${primaryGradientBtn}`}
             >
-              {isUploading ? "Uploading…" : "Save Notes"}
+              {isUploading ? "Uploading…" : "Save Notes to RAG"}
             </button>
           </form>
+
+          {/* 👉 NEW: Button to open the Notebook Modal */}
+          <button
+            type="button"
+            onClick={() => setIsNotesModalOpen(true)}
+            disabled={!activeSessionId}
+            className="w-full mt-3 text-xs font-bold rounded-xl px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 relative z-10"
+          >
+            📚 View Saved Summaries
+          </button>
         </div>
 
         {uploadStatus && (
