@@ -4,6 +4,7 @@ import { StudentProfile } from "../models/StudentProfile.js";
 import User from "../models/User.js";
 import { generateBuddyCompletion } from "../config/llmClient.js";
 import { JointPlan } from "../models/JointPlan.js"; // 👉 Add this to your imports
+import { DirectMessage } from "../models/DirectMessage.js";
 // ==========================================
 // SEMANTIC MATCHING DICTIONARY
 // ==========================================
@@ -207,5 +208,46 @@ Do NOT output generic bullet points. Create a rich, educational masterclass stru
   } catch (err) {
     console.error("generateJointStudyPlan error:", err);
     return res.status(500).json({ error: "Failed to generate study plan" });
+  }
+}
+
+// ==========================================
+// 3. PEER-TO-PEER MESSAGING
+// ==========================================
+
+export async function sendDirectMessage(req, res) {
+  try {
+    const senderId = req.user._id.toString();
+    const { receiverId, text } = req.body;
+
+    if (!receiverId || !text.trim()) {
+      return res.status(400).json({ error: "Receiver and text are required." });
+    }
+
+    const msg = await DirectMessage.create({ senderId, receiverId, text: text.trim() });
+    return res.json({ message: msg });
+  } catch (err) {
+    console.error("sendDirectMessage error:", err);
+    return res.status(500).json({ error: "Failed to send message" });
+  }
+}
+
+export async function getDirectMessages(req, res) {
+  try {
+    const myId = req.user._id.toString();
+    const peerId = req.params.peerId;
+
+    // Fetch messages where I am sender & they are receiver, OR they are sender & I am receiver
+    const messages = await DirectMessage.find({
+      $or: [
+        { senderId: myId, receiverId: peerId },
+        { senderId: peerId, receiverId: myId }
+      ]
+    }).sort({ createdAt: 1 }); // Oldest to newest (chronological)
+
+    return res.json({ messages });
+  } catch (err) {
+    console.error("getDirectMessages error:", err);
+    return res.status(500).json({ error: "Failed to fetch messages" });
   }
 }

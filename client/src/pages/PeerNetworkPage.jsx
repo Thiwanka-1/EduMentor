@@ -1,5 +1,5 @@
 // client/src/pages/PeerNetworkPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api.js";
 
@@ -10,11 +10,17 @@ export default function PeerNetworkPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [myUserId, setMyUserId] = useState(null);
 
-  // Modal State
+  // Modal State for Study Plan
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [studyPlanText, setStudyPlanText] = useState("");
   const [selectedPlanDetails, setSelectedPlanDetails] = useState("");
+
+  // Modal State for Chat
+  const [activeChatPeer, setActiveChatPeer] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState("");
+  const chatBottomRef = useRef(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,7 +45,9 @@ export default function PeerNetworkPage() {
     fetchData();
   }, []);
 
-  // Helper to check if a plan already exists in the DB
+  // ----------------------------------------------------
+  // STUDY PLAN LOGIC
+  // ----------------------------------------------------
   const getExistingPlan = (tutorId, learnerId, topic) => {
     return sharedPlans.find(p => 
       p.tutorId === tutorId && p.learnerId === learnerId && p.topic === topic
@@ -60,7 +68,6 @@ export default function PeerNetworkPage() {
 
       setStudyPlanText(res.data.studyPlan);
       
-      // Update local state so the button changes to "View" immediately
       setSharedPlans(prev => [...prev, {
         _id: res.data.planId,
         tutorId: myUserId,
@@ -90,6 +97,56 @@ export default function PeerNetworkPage() {
     if (type === "Be a Mentor") return "💡";
     return "🤝";
   };
+
+  // ----------------------------------------------------
+  // PEER CHAT LOGIC
+  // ----------------------------------------------------
+  const openChat = async (peer) => {
+    setActiveChatPeer(peer);
+    fetchMessages(peer.peerId);
+  };
+
+  const fetchMessages = async (peerId) => {
+    try {
+      const res = await api.get(`/chat/peers/messages/${peerId}`);
+      setChatMessages(res.data.messages || []);
+      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch (err) {
+      console.error("Failed to fetch messages", err);
+    }
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !activeChatPeer) return;
+
+    const textToSend = chatInput;
+    setChatInput(""); 
+
+    // Optimistically update UI
+    setChatMessages(prev => [...prev, { senderId: myUserId, text: textToSend, createdAt: new Date() }]);
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+    try {
+      await api.post("/chat/peers/messages", {
+        receiverId: activeChatPeer.peerId,
+        text: textToSend
+      });
+    } catch (err) {
+      console.error("Failed to send message", err);
+    }
+  };
+
+  // Polling Engine: Auto-refresh messages every 3 seconds if chat is open
+  useEffect(() => {
+    let interval;
+    if (activeChatPeer) {
+      interval = setInterval(() => {
+        fetchMessages(activeChatPeer.peerId);
+      }, 3000);
+    }
+    return () => clearInterval(interval);
+  }, [activeChatPeer]);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans relative">
@@ -202,7 +259,10 @@ export default function PeerNetworkPage() {
                 </div>
 
                 <div className="p-4 border-t border-slate-100 bg-slate-50">
-                  <button className="w-full bg-white border border-slate-200 text-slate-600 text-sm font-bold py-3 rounded-xl hover:bg-slate-100 transition-colors shadow-sm flex justify-center items-center gap-2">
+                  <button 
+                    onClick={() => openChat(peer)}
+                    className="w-full bg-white border border-slate-200 text-slate-600 text-sm font-bold py-3 rounded-xl hover:bg-slate-100 transition-colors shadow-sm flex justify-center items-center gap-2"
+                  >
                     💬 Message {peer.name.split(" ")[0]}
                   </button>
                 </div>
@@ -258,6 +318,72 @@ export default function PeerNetworkPage() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* CHAT MODAL */}
+      {activeChatPeer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg h-[600px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            
+            <div className="flex justify-between items-center p-4 border-b border-slate-200 bg-white">
+              <div className="flex items-center gap-3">
+                <img 
+                  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${activeChatPeer.name}&backgroundColor=c0aede`} 
+                  alt="avatar" 
+                  className="w-10 h-10 rounded-full border border-slate-200"
+                />
+                <div>
+                  <h2 className="text-base font-extrabold text-slate-800">{activeChatPeer.name}</h2>
+                  <div className="text-[10px] font-bold text-emerald-500 uppercase tracking-wider flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setActiveChatPeer(null)} className="text-slate-400 hover:text-rose-500 font-bold p-2 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">✕</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 flex flex-col gap-3">
+              {chatMessages.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-slate-400">
+                  <div className="text-4xl mb-2">👋</div>
+                  <p className="text-sm font-bold">Say hi to {activeChatPeer.name.split(" ")[0]}!</p>
+                  <p className="text-xs">Coordinate a time to go over your study plan.</p>
+                </div>
+              ) : (
+                chatMessages.map((msg, i) => {
+                  const isMe = msg.senderId === myUserId;
+                  return (
+                    <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[75%] px-4 py-2 rounded-2xl text-sm ${isMe ? "bg-indigo-600 text-white rounded-br-sm shadow-sm" : "bg-white border border-slate-200 text-slate-800 rounded-bl-sm shadow-sm"}`}>
+                        {msg.text}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatBottomRef} />
+            </div>
+
+            <div className="p-4 bg-white border-t border-slate-200">
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <input
+                  type="text"
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type a message..."
+                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                />
+                <button 
+                  type="submit"
+                  disabled={!chatInput.trim()}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       )}

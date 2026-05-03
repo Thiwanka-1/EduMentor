@@ -2,7 +2,7 @@
 import express from "express";
 import { chatWithBuddy, generateSessionSummary, getStudentKnowledge} from "../controllers/chatController.js";
 import { protect } from "../middleware/auth.middleware.js";
-import { getPeerMatches, generateJointStudyPlan, getSharedPlans } from "../controllers/peerController.js";
+import { getPeerMatches, generateJointStudyPlan, getSharedPlans, sendDirectMessage,getDirectMessages } from "../controllers/peerController.js";
 const router = express.Router();
 
 // Because server.js uses app.use("/api/chat", buddychatRoutes)
@@ -16,6 +16,9 @@ router.get("/knowledge", protect, getStudentKnowledge);
 router.get("/peers/matches", protect, getPeerMatches);
 router.get("/peers/study-plans", protect, getSharedPlans); // 👉 New Route
 router.post("/peers/study-plan", protect, generateJointStudyPlan);
+
+router.post("/peers/messages", protect, sendDirectMessage);
+router.get("/peers/messages/:peerId", protect, getDirectMessages);
 
 
 export default router;
