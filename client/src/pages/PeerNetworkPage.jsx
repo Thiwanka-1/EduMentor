@@ -160,7 +160,7 @@ export default function PeerNetworkPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate("/")} 
+          onClick={() => navigate("/study-buddy")} 
           className="text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 hover:text-indigo-600 px-4 py-2.5 rounded-xl transition-colors border border-slate-200 shadow-sm"
         >
           ← Back to Chat

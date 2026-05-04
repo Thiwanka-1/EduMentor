@@ -26,6 +26,9 @@ const CLASSIFIER_API_URL =
 const RAG_API_URL = process.env.RAG_API_URL || "http://127.0.0.1:8001";
 const CLASSIFIER_THRESHOLD = Number(process.env.CLASSIFIER_THRESHOLD || 0.8);
 
+const CLASSIFIER_TIMEOUT_MS = Number(process.env.CLASSIFIER_TIMEOUT_MS || 4000);
+const RAG_TIMEOUT_MS = Number(process.env.RAG_TIMEOUT_MS || 8000);
+
 function generateTitle(question) {
   return question.split(" ").slice(0, 6).join(" ");
 }
@@ -34,9 +37,6 @@ function normalizeMode(mode) {
   return ALL_MODES.includes(mode) ? mode : "simple";
 }
 
-/* =========================
-   Complexity helpers
-========================= */
 function complexityLabel(level = 55) {
   const n = Number(level);
   if (Number.isNaN(n)) return "Undergraduate";
@@ -64,9 +64,6 @@ function complexityRules(label) {
 - Keep it exam-friendly`;
 }
 
-/* =========================
-   Friendly out-of-scope response
-========================= */
 function buildFriendlyOutOfScopeContent() {
   return `### This question is outside MVEG's academic scope
 
@@ -86,21 +83,62 @@ Your current question does not appear to belong to that academic scope, so I can
 - Explain binary search tree with an example`;
 }
 
-/* =========================
-   Classifier API call
-========================= */
-async function classifyWithModel(message) {
-  const res = await fetch(`${CLASSIFIER_API_URL}/classify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: message }),
-  });
+function buildDegradedWarnings(degraded, strictRequested) {
+  const warnings = [];
 
-  if (!res.ok) {
-    throw new Error(`Classifier API failed with status ${res.status}`);
+  if (degraded.classifier) {
+    warnings.push(
+      "Academic scope checking is temporarily unavailable, so this answer was generated without classifier validation.",
+    );
   }
 
-  const data = await res.json();
+  if (degraded.rag && strictRequested) {
+    warnings.push(
+      "Strict syllabus retrieval is temporarily unavailable, so this answer was generated without syllabus-grounded context.",
+    );
+  }
+
+  return warnings;
+}
+
+async function fetchJsonWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    const data = await res.json().catch(() => null);
+
+    return {
+      ok: res.ok,
+      status: res.status,
+      data,
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function classifyWithModel(message) {
+  const result = await fetchJsonWithTimeout(
+    `${CLASSIFIER_API_URL}/classify`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: message }),
+    },
+    CLASSIFIER_TIMEOUT_MS,
+  );
+
+  if (!result.ok) {
+    throw new Error(`Classifier API failed with status ${result.status}`);
+  }
+
+  const data = result.data || {};
 
   return {
     label: data.label,
@@ -110,14 +148,34 @@ async function classifyWithModel(message) {
   };
 }
 
-/* =========================
-   Build base prompt
-========================= */
+async function retrieveContext({ message, module }) {
+  const result = await fetchJsonWithTimeout(
+    `${RAG_API_URL}/retrieve`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: message,
+        top_k: 5,
+        module: module || "ALL",
+      }),
+    },
+    RAG_TIMEOUT_MS,
+  );
+
+  if (!result.ok) {
+    throw new Error(`RAG API failed with status ${result.status}`);
+  }
+
+  return Array.isArray(result.data) ? result.data : [];
+}
+
 async function buildBasePrompt({
   message,
   strict,
   module = "ALL",
   complexity = 55,
+  degraded,
 }) {
   const level = complexityLabel(complexity);
   const rules = complexityRules(level);
@@ -139,30 +197,19 @@ Keep the answer academically useful, clear, and syllabus-friendly.
     };
   }
 
-  const retrievalRes = await fetch(`${RAG_API_URL}/retrieve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: message,
-      top_k: 5,
-      module: module || "ALL",
-    }),
-  });
+  try {
+    const chunks = await retrieveContext({ message, module });
 
-  if (!retrievalRes.ok) throw new Error("Retrieval failed");
+    const context = chunks
+      .map((c, i) => {
+        const src = c.source || "unknown";
+        const pg = c.page ? `, page ${c.page}` : "";
+        return `Source ${i + 1} (${src}${pg}):\n${c.text || ""}`;
+      })
+      .join("\n\n");
 
-  const chunks = await retrievalRes.json();
-
-  const context = (Array.isArray(chunks) ? chunks : [])
-    .map((c, i) => {
-      const src = c.source || "unknown";
-      const pg = c.page ? `, page ${c.page}` : "";
-      return `Source ${i + 1} (${src}${pg}):\n${c.text || ""}`;
-    })
-    .join("\n\n");
-
-  return {
-    systemBase: `
+    return {
+      systemBase: `
 You are an academic explanation generator for CS/SE/IT students.
 
 STRICT RULES:
@@ -179,14 +226,33 @@ ${rules}
 
 CONTEXT:
 ${context || "(No context available)"}
-    `.trim(),
-    userMessage: message,
-  };
+      `.trim(),
+      userMessage: message,
+    };
+  } catch (err) {
+    console.error("RAG service error:", err.message);
+    degraded.rag = true;
+
+    // fallback to normal explanation if strict retrieval fails
+    return {
+      systemBase: `
+You are an explanation generator for university students focused on CS/SE/IT academic topics.
+
+COMPLEXITY LEVEL: ${level}
+RULES:
+${rules}
+
+IMPORTANT:
+- Strict syllabus retrieval was unavailable.
+- Generate the best possible general academic explanation.
+- Do not claim that this came from syllabus materials.
+- Do not introduce yourself.
+      `.trim(),
+      userMessage: message,
+    };
+  }
 }
 
-/* =========================
-   Generate one view
-========================= */
 async function generateForMode({ message, strict, mode, basePrompt }) {
   const styleInstruction = MODE_INSTRUCTIONS[mode] || MODE_INSTRUCTIONS.simple;
 
@@ -214,9 +280,6 @@ ${styleInstruction}`,
   return (completion?.choices?.[0]?.message?.content || "").trim();
 }
 
-/* =========================
-   Main Handler
-========================= */
 export async function generateAndSave(req, res) {
   try {
     const {
@@ -238,33 +301,61 @@ export async function generateAndSave(req, res) {
     const cleanMessage = String(message).trim();
     const selectedMode = normalizeMode(mode);
 
+    const degraded = {
+      classifier: false,
+      rag: false,
+    };
+
     /* =========================
-       1) classifier decides scope
+       1) classifier gate
     ========================= */
-    let cls;
+    let allowGeneration = true;
+    let classifierMeta = null;
+
     try {
-      cls = await classifyWithModel(cleanMessage);
+      const cls = await classifyWithModel(cleanMessage);
+      classifierMeta = cls;
+
+      const allowed =
+        cls.label === "in_scope" &&
+        cls.inScopeConfidence >= (cls.threshold || CLASSIFIER_THRESHOLD);
+
+      allowGeneration = allowed;
+
+      if (!allowed) {
+        return res.status(200).json({
+          id: null,
+          mode: selectedMode,
+          content: buildFriendlyOutOfScopeContent(),
+          answer: "Out of scope",
+          views: {
+            simple: "",
+            analogy: "",
+            code: "",
+            summary: "",
+          },
+          outOfScope: true,
+          outOfScopePayload: {
+            classifierSource: "trained_classifier",
+            classifierConfidence: cls.inScopeConfidence,
+            classifierRaw: cls,
+          },
+          question: cleanMessage,
+          title: "Out of scope request",
+          createdAt: new Date().toISOString(),
+        });
+      }
     } catch (err) {
       console.error("Classifier service error:", err.message);
-
-      return res.status(503).json({
-        error: "Scope classifier unavailable",
-        message:
-          "The academic scope checking service is temporarily unavailable. Please try again in a moment.",
-      });
+      degraded.classifier = true;
+      allowGeneration = true; // fail-open
     }
 
-    const allowed =
-      cls.label === "in_scope" &&
-      cls.inScopeConfidence >= (cls.threshold || CLASSIFIER_THRESHOLD);
-
-    if (!allowed) {
-      const friendlyContent = buildFriendlyOutOfScopeContent();
-
+    if (!allowGeneration) {
       return res.status(200).json({
         id: null,
         mode: selectedMode,
-        content: friendlyContent,
+        content: buildFriendlyOutOfScopeContent(),
         answer: "Out of scope",
         views: {
           simple: "",
@@ -273,11 +364,6 @@ export async function generateAndSave(req, res) {
           summary: "",
         },
         outOfScope: true,
-        outOfScopePayload: {
-          classifierSource: "trained_classifier",
-          classifierConfidence: cls.inScopeConfidence,
-          classifierRaw: cls,
-        },
         question: cleanMessage,
         title: "Out of scope request",
         createdAt: new Date().toISOString(),
@@ -285,27 +371,28 @@ export async function generateAndSave(req, res) {
     }
 
     /* =========================
-       2) build prompt
+       2) build prompt with possible RAG fallback
     ========================= */
     const basePrompt = await buildBasePrompt({
       message: cleanMessage,
       strict: Boolean(strict),
       module,
       complexity,
+      degraded,
     });
 
     /* =========================
-       3) selected view first
+       3) generate selected view
     ========================= */
     const selectedAnswer = await generateForMode({
       message: cleanMessage,
-      strict: Boolean(strict),
+      strict: Boolean(strict && !degraded.rag),
       mode: selectedMode,
       basePrompt,
     });
 
     /* =========================
-       4) remaining views
+       4) generate remaining views
     ========================= */
     const remainingModes = ALL_MODES.filter((m) => m !== selectedMode);
 
@@ -313,7 +400,7 @@ export async function generateAndSave(req, res) {
       remainingModes.map(async (m) => {
         const content = await generateForMode({
           message: cleanMessage,
-          strict: Boolean(strict),
+          strict: Boolean(strict && !degraded.rag),
           mode: m,
           basePrompt,
         });
@@ -333,9 +420,6 @@ export async function generateAndSave(req, res) {
       views[m] = content;
     }
 
-    /* =========================
-       5) save
-    ========================= */
     const doc = await Explanation.create({
       user: req.user._id,
       question: cleanMessage,
@@ -344,7 +428,7 @@ export async function generateAndSave(req, res) {
       instruction: MODE_INSTRUCTIONS[selectedMode],
       answer: selectedAnswer,
       views,
-      strict: Boolean(strict),
+      strict: Boolean(strict && !degraded.rag),
       module,
       complexity,
     });
@@ -361,11 +445,19 @@ export async function generateAndSave(req, res) {
       createdAt: doc.createdAt,
       module,
       complexity,
-      classifierSource: "trained_classifier",
-      classifierConfidence: cls.inScopeConfidence,
+      degraded,
+      warnings: buildDegradedWarnings(degraded, strict),
+      classifierSource: degraded.classifier
+        ? "classifier_unavailable_fallback_open"
+        : "trained_classifier",
+      classifierConfidence: classifierMeta?.inScopeConfidence ?? null,
     });
   } catch (err) {
     console.error("Chat error:", err);
-    return res.status(500).json({ error: "Generation failed" });
+    return res.status(500).json({
+      error: "Generation failed",
+      message:
+        "MVEG could not generate an explanation right now. Please try again in a moment.",
+    });
   }
 }
