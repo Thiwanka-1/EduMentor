@@ -16,6 +16,8 @@ import ProfilePage from "./pages/ProfilePage";
 import TutorMode from "./pages/TutorMode.jsx";
 import LessonMode from "./pages/LessonMode.jsx";
 import ChatPage from "./components/ChatPage.jsx";
+import KnowledgeTreePage from "./pages/KnowledgeTreePage"; 
+import PeerNetworkPage from "./pages/PeerNetworkPage";
 
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
@@ -97,8 +99,9 @@ export default function App() {
           {/* Standalone Tools */}
           <Route path="/tutor" element={<TutorMode />} />
           <Route path="/lesson" element={<LessonMode />} />
-
+          <Route path="/knowledge-tree" element={<KnowledgeTreePage />} />
           <Route path="/study-buddy" element={<ChatPage />} />
+          <Route path="/study-hub" element={<PeerNetworkPage />} />
         </Route>
 
         {/* Catch-all 404 */}

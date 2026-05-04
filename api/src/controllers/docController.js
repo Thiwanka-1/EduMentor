@@ -3,7 +3,7 @@ import "../config/env.js";
 import fs from "fs/promises";
 import path from "path";
 import pdfParse from "pdf-parse-debugging-disabled";
-
+import { StudyNote } from "../models/StudyNote.js";
 import { hf, HF_EMBED_MODEL } from "../config/hfClient.js";
 import { DocChunk } from "../models/DocChunk.js";
 import { DocFile } from "../models/DocFile.js";
@@ -72,6 +72,7 @@ export function buildContextText(blocks) {
 }
 
 // ---------- upload TEXT ----------
+// ---------- upload TEXT ----------
 export async function uploadTextDoc(req, res) {
   try {
     // 🚨 SECURE: Grab userId from the cookie
@@ -81,6 +82,9 @@ export async function uploadTextDoc(req, res) {
     if (!sessionId || !title || !text) {
       return res.status(400).json({ error: "sessionId, title, text are required" });
     }
+
+    // 👉 THE CRITICAL MISSING LINE: This saves the full note so it shows up in your Modal!
+    await StudyNote.create({ userId, sessionId, title, content: text });
 
     const chunks = chunkText(text);
     if (!chunks.length) return res.status(400).json({ error: "Text is empty after cleaning." });
@@ -231,4 +235,18 @@ export async function retrieveStudyContext(userId, sessionId, query, topK = 5) {
   scored.sort((a, b) => b.score - a.score);
 
   return scored.slice(0, topK);
+}
+
+// 👉 ADD THIS NEW FUNCTION AT THE BOTTOM
+export async function getSessionNotes(req, res) {
+  try {
+    const userId = req.user._id;
+    const { sessionId } = req.params; // Get sessionId from the URL URL
+
+    const notes = await StudyNote.find({ userId, sessionId }).sort({ createdAt: -1 });
+    return res.json({ notes });
+  } catch (err) {
+    console.error("getSessionNotes error:", err);
+    return res.status(500).json({ error: "Failed to fetch saved notes" });
+  }
 }
