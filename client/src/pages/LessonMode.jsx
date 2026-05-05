@@ -1351,7 +1351,9 @@ export default function LessonMode() {
                         }`}
                       >
                         <div
-                          className={`max-w-[82%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${
+                          className={`${
+  languageMode === "sinhala" ? "max-w-[96%]" : "max-w-[82%]"
+} whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2.5 text-sm leading-6 shadow-sm ${
                             m.sender === "me"
                               ? "bg-gradient-to-r from-indigo-600 via-violet-600 to-teal-500 text-white"
                               : "border border-slate-300 bg-slate-50 text-slate-700"

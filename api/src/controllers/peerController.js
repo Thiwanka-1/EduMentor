@@ -3,13 +3,12 @@ import "../config/env.js";
 import { StudentProfile } from "../models/StudentProfile.js";
 import User from "../models/User.js";
 import { generateBuddyCompletion } from "../config/llmClient.js";
-import { JointPlan } from "../models/JointPlan.js"; // 👉 Add this to your imports
+import { JointPlan } from "../models/JointPlan.js";
 import { DirectMessage } from "../models/DirectMessage.js";
+
 // ==========================================
 // SEMANTIC MATCHING DICTIONARY
 // ==========================================
-// This handles the "OOP" vs "Object Oriented Programming" problem 
-// extremely fast without needing heavy vector database searches.
 const TOPIC_SYNONYMS = {
   "oop": "object oriented programming",
   "db": "databases",
@@ -26,12 +25,15 @@ const TOPIC_SYNONYMS = {
 
 function normalizeTopic(topic) {
   if (!topic) return "";
-  let clean = topic.toLowerCase().trim();
+  let clean = String(topic).toLowerCase().trim();
   return TOPIC_SYNONYMS[clean] || clean;
 }
 
-// Helper to check if two topic arrays have a semantic intersection
+// Crash protection for empty database arrays (Genuine fix)
 function findSemanticMatches(arrayA, arrayB) {
+  if (!arrayA || !Array.isArray(arrayA) || !arrayB || !Array.isArray(arrayB)) {
+    return []; 
+  }
   const normalizedA = arrayA.map(normalizeTopic);
   const normalizedB = arrayB.map(normalizeTopic);
   return arrayA.filter((originalTopic, index) => 
@@ -40,7 +42,7 @@ function findSemanticMatches(arrayA, arrayB) {
 }
 
 // ==========================================
-// 1. THE PEER MATCHING ALGORITHM
+// 1. THE GENUINE PEER MATCHING ALGORITHM
 // ==========================================
 export async function getPeerMatches(req, res) {
   try {
@@ -51,10 +53,8 @@ export async function getPeerMatches(req, res) {
       return res.status(404).json({ error: "Profile not found." });
     }
 
-    // Fetch all other student profiles
     const allProfiles = await StudentProfile.find({ userId: { $ne: currentUserId } });
     
-    // Fetch user details (names/emails) to attach to the profiles
     const userIds = allProfiles.map(p => p.userId);
     const users = await User.find({ _id: { $in: userIds } });
     const userMap = users.reduce((acc, u) => {
@@ -66,21 +66,17 @@ export async function getPeerMatches(req, res) {
 
     for (const peer of allProfiles) {
       const peerData = userMap[peer.userId];
-      if (!peerData) continue; // Skip if user account was deleted
+      if (!peerData) continue; 
 
-      // 1. Calculate Tutoring Potential (Protégé Effect)
-      // Topics I am weak at, but they are strong at (They tutor me)
+      // The core math: finding the actual intersections
       const theyCanTeachMe = findSemanticMatches(myProfile.weakTopics, peer.strongTopics);
-      
-      // Topics I am strong at, but they are weak at (I tutor them)
       const iCanTeachThem = findSemanticMatches(myProfile.strongTopics, peer.weakTopics);
 
-      // 2. Calculate ZPD Score (0 to 100)
       let score = 0;
       let matchType = "None";
 
       if (theyCanTeachMe.length > 0 && iCanTeachThem.length > 0) {
-        score += 80; // Massive boost for Mutual Mentorship
+        score += 80; 
         matchType = "Mutual Exchange";
       } else if (theyCanTeachMe.length > 0) {
         score += 50; 
@@ -90,20 +86,22 @@ export async function getPeerMatches(req, res) {
         matchType = "Be a Mentor";
       }
 
-      // 3. Motivation Balancing
-      // A motivated student (4-5) paired with a stressed student (1-2) gets a bonus
-      const motivationDiff = Math.abs(myProfile.motivationLevel - peer.motivationLevel);
+      // Safe motivation calculation fallback
+      const myMotivation = myProfile.motivationLevel || 3;
+      const peerMotivation = peer.motivationLevel || 3;
+      const motivationDiff = Math.abs(myMotivation - peerMotivation);
+      
       if (motivationDiff >= 2 && score > 0) {
-        score += 15; // +15% compatibility for emotional balancing
+        score += 15; 
       }
 
-      // Only return people who actually match academically
+      // Only pushes to the array if a GENUINE match > 0 exists
       if (score > 0) {
         matches.push({
           peerId: peer.userId,
           name: peerData.name,
           email: peerData.email,
-          compatibilityScore: Math.min(100, score), // Cap at 100%
+          compatibilityScore: Math.min(100, score), 
           matchType,
           topicsToLearn: theyCanTeachMe,
           topicsToTeach: iCanTeachThem,
@@ -112,9 +110,7 @@ export async function getPeerMatches(req, res) {
       }
     }
 
-    // Sort by highest compatibility score
     matches.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-
     return res.json({ matches });
   } catch (err) {
     console.error("getPeerMatches error:", err);
@@ -147,7 +143,6 @@ export async function generateJointStudyPlan(req, res) {
       return res.status(400).json({ error: "peerId and topicToTeach are required." });
     }
 
-    // Check if a plan already exists to prevent duplicates
     const existingPlan = await JointPlan.findOne({ 
       tutorId: currentUserId, 
       learnerId: peerId, 
@@ -161,7 +156,6 @@ export async function generateJointStudyPlan(req, res) {
     const me = await User.findById(currentUserId);
     const peer = await User.findById(peerId);
 
-    // 🔥 THE PEDAGOGICAL MASTERCLASS PROMPT 🔥
     const prompt = `
 You are an elite academic curriculum designer for a university.
 Design a highly detailed, premium-quality 1-hour tutoring lesson plan where ${me.name} (the Expert Mentor) teaches ${peer.name} (the Learner) about the specific topic: "${topicToTeach}".
@@ -187,7 +181,6 @@ Do NOT output generic bullet points. Create a rich, educational masterclass stru
 (Provide 3 challenging quiz questions to test ${peer.name}'s understanding, along with the correct answers for the mentor to grade them.)
     `.trim();
 
-    // Call the LLM with higher token limits for a better response
     const rawPlan = await generateBuddyCompletion({
       messages: [{ role: "system", content: prompt }],
       max_tokens: 1500, 
@@ -196,7 +189,6 @@ Do NOT output generic bullet points. Create a rich, educational masterclass stru
 
     const finalContent = rawPlan.trim();
 
-    // 👉 SAVE IT TO THE DATABASE so the Learner can see it!
     const savedPlan = await JointPlan.create({
       tutorId: currentUserId,
       learnerId: peerId,
@@ -214,7 +206,6 @@ Do NOT output generic bullet points. Create a rich, educational masterclass stru
 // ==========================================
 // 3. PEER-TO-PEER MESSAGING
 // ==========================================
-
 export async function sendDirectMessage(req, res) {
   try {
     const senderId = req.user._id.toString();
@@ -237,13 +228,12 @@ export async function getDirectMessages(req, res) {
     const myId = req.user._id.toString();
     const peerId = req.params.peerId;
 
-    // Fetch messages where I am sender & they are receiver, OR they are sender & I am receiver
     const messages = await DirectMessage.find({
       $or: [
         { senderId: myId, receiverId: peerId },
         { senderId: peerId, receiverId: myId }
       ]
-    }).sort({ createdAt: 1 }); // Oldest to newest (chronological)
+    }).sort({ createdAt: 1 }); 
 
     return res.json({ messages });
   } catch (err) {
