@@ -674,6 +674,7 @@ export default function LessonMode() {
   }
 
   function handleLanguageChange(mode) {
+    
     if (!LANGUAGE_MODES.includes(mode)) return;
 
     languageModeRef.current = mode;
