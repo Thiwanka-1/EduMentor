@@ -18,6 +18,11 @@ import LessonMode from "./pages/LessonMode.jsx";
 import ChatPage from "./components/ChatPage.jsx";
 import KnowledgeTreePage from "./pages/KnowledgeTreePage"; 
 import PeerNetworkPage from "./pages/PeerNetworkPage";
+import Dashboard from "./pages/Dashboard.jsx";
+import NotesPage from "./pages/NotesPage.jsx";
+import AudioSessionsPage from "./pages/AudioSessionsPage.jsx";
+import VideoSessionsPage from "./pages/VideoSessionsPage.jsx";
+import QuizResultsPage from "./pages/QuizResultsPage.jsx";
 
 // ✅ MVEG pages
 import MvegLayout from "./pages/mveg/MvegLayout";
@@ -102,6 +107,17 @@ export default function App() {
           <Route path="/knowledge-tree" element={<KnowledgeTreePage />} />
           <Route path="/study-buddy" element={<ChatPage />} />
           <Route path="/study-hub" element={<PeerNetworkPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/lessons/:id" element={<NotesPage />} />
+        <Route path="/dashboard/notes" element={<Dashboard />} />
+        <Route path="/dashboard/audio" element={<AudioSessionsPage />} />
+        <Route path="/dashboard/videos" element={<VideoSessionsPage />} />
+        <Route path="/dashboard/quiz" element={<QuizResultsPage />} />
+      
+
+
+
+
         </Route>
 
         {/* Catch-all 404 */}
