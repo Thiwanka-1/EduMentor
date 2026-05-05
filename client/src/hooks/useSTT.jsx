@@ -1,71 +1,227 @@
 import { useEffect, useRef, useState } from "react";
-import { WS_BASE } from "../api/wsConfig.jsx";
 
-export default function useSTT(onFinalText) {
-  const mediaRecorderRef = useRef(null);
-  const audioChunks = useRef([]);
-  const wsRef = useRef(null);
+export default function useSTT({
+  language = "en-US",
+  onFinalText,
+  onInterimText,
+  onStatusChange,
+} = {}) {
+  const [isListening, setIsListening] = useState(false);
 
-  const [isListening, setListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const finalTranscriptRef = useRef("");
+  const interimTranscriptRef = useRef("");
+  const manuallyStoppedRef = useRef(false);
 
-  // Connect to STT WebSocket
+  const callbacksRef = useRef({
+    onFinalText,
+    onInterimText,
+    onStatusChange,
+  });
+
   useEffect(() => {
-    const ws = new WebSocket(`${WS_BASE}/ws/stt`);
-    wsRef.current = ws;
+    callbacksRef.current = {
+      onFinalText,
+      onInterimText,
+      onStatusChange,
+    };
+  }, [onFinalText, onInterimText, onStatusChange]);
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+  function getSpeechRecognition() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
 
-      if (data.type === "transcript") {
-        onFinalText(data.text);
-        setListening(false);
+  function clearSilenceTimer() {
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = null;
+    }
+  }
+
+  function cleanupRecognition() {
+    clearSilenceTimer();
+
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    recognition.onstart = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+
+    try {
+      recognition.stop();
+    } catch {
+      // ignore
+    }
+
+    recognitionRef.current = null;
+  }
+
+  function createRecognition() {
+    const SpeechRecognition = getSpeechRecognition();
+
+    if (!SpeechRecognition) {
+      callbacksRef.current.onStatusChange?.("unsupported");
+      return null;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = language || "en-US";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      manuallyStoppedRef.current = false;
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      clearSilenceTimer();
+
+      callbacksRef.current.onInterimText?.("");
+      callbacksRef.current.onStatusChange?.("listening");
+    };
+
+    recognition.onresult = (event) => {
+      let finalText = finalTranscriptRef.current;
+      let interimText = "";
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const transcript = event.results[i]?.[0]?.transcript || "";
+
+        if (event.results[i].isFinal) {
+          finalText += `${transcript} `;
+        } else {
+          interimText += transcript;
+        }
       }
+
+      finalTranscriptRef.current = finalText.trim();
+      interimTranscriptRef.current = interimText.trim();
+
+      const liveText =
+        `${finalTranscriptRef.current} ${interimTranscriptRef.current}`.trim();
+
+      callbacksRef.current.onInterimText?.(liveText);
+
+      clearSilenceTimer();
+
+      silenceTimerRef.current = setTimeout(() => {
+        try {
+          manuallyStoppedRef.current = true;
+          recognition.stop();
+        } catch (err) {
+          console.error("auto-stop speech recognition error:", err);
+        }
+      }, 1800);
     };
 
-    return () => ws.close();
-  }, []);
+    recognition.onerror = (event) => {
+      clearSilenceTimer();
+      setIsListening(false);
 
-  // Start recording
-  async function startListening() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (event.error === "no-speech") {
+        callbacksRef.current.onStatusChange?.("no-speech");
+        callbacksRef.current.onInterimText?.("");
+        return;
+      }
 
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    mediaRecorderRef.current = recorder;
-    audioChunks.current = [];
+      if (
+        event.error === "not-allowed" ||
+        event.error === "service-not-allowed" ||
+        event.error === "permission-denied"
+      ) {
+        callbacksRef.current.onStatusChange?.("permission-denied");
+        callbacksRef.current.onInterimText?.("");
+        return;
+      }
 
-    recorder.ondataavailable = (e) => {
-      audioChunks.current.push(e.data);
+      if (event.error === "language-not-supported") {
+        callbacksRef.current.onStatusChange?.("language-not-supported");
+        callbacksRef.current.onInterimText?.("");
+        return;
+      }
+
+      console.error("Speech recognition error:", event.error);
+      callbacksRef.current.onStatusChange?.(event.error || "error");
+      callbacksRef.current.onInterimText?.("");
     };
 
-    recorder.onstop = async () => {
-      const blob = new Blob(audioChunks.current, { type: "audio/webm" });
-      const base64 = await convertToBase64(blob);
+    recognition.onend = () => {
+      clearSilenceTimer();
+      setIsListening(false);
 
-      wsRef.current.send(
-        JSON.stringify({
-          type: "audio_chunk",
-          audio: base64,
-        })
-      );
+      const combinedText =
+        `${finalTranscriptRef.current} ${interimTranscriptRef.current}`.trim();
+
+      if (combinedText) {
+        callbacksRef.current.onFinalText?.(combinedText);
+        callbacksRef.current.onStatusChange?.("final");
+      } else if (manuallyStoppedRef.current) {
+        callbacksRef.current.onStatusChange?.("stopped");
+      } else {
+        callbacksRef.current.onStatusChange?.("ended");
+      }
+
+      finalTranscriptRef.current = "";
+      interimTranscriptRef.current = "";
+      callbacksRef.current.onInterimText?.("");
+      manuallyStoppedRef.current = false;
     };
 
-    recorder.start();
-    setListening(true);
+    recognitionRef.current = recognition;
+    return recognition;
   }
 
-  // Stop recording
+  function startListening() {
+    let recognition = recognitionRef.current;
+
+    if (!recognition) {
+      recognition = createRecognition();
+    }
+
+    if (!recognition) return false;
+
+    finalTranscriptRef.current = "";
+    interimTranscriptRef.current = "";
+    manuallyStoppedRef.current = false;
+    clearSilenceTimer();
+
+    try {
+      recognition.lang = language || "en-US";
+      recognition.start();
+      return true;
+    } catch (err) {
+      console.error("startListening error:", err);
+      return false;
+    }
+  }
+
   function stopListening() {
-    mediaRecorderRef.current.stop();
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+
+    manuallyStoppedRef.current = true;
+    clearSilenceTimer();
+
+    try {
+      recognition.stop();
+    } catch (err) {
+      console.error("stopListening error:", err);
+    }
   }
 
-  // Convert Blob to Base64
-  function convertToBase64(blob) {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result.split(",")[1]);
-      reader.readAsDataURL(blob);
-    });
-  }
+  useEffect(() => {
+    cleanupRecognition();
+    createRecognition();
+
+    return () => {
+      cleanupRecognition();
+    };
+  }, [language]);
 
   return {
     isListening,

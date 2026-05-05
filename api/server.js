@@ -11,6 +11,7 @@ import cookieParser from "cookie-parser";
 import multer from "multer";
 import { v4 as uuidv4 } from "uuid";
 import dns from "node:dns/promises";
+import crypto from "crypto";
 
 // Fix DNS resolution issues for certain MongoDB/Ollama environments
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
@@ -40,6 +41,7 @@ import lessonWSConnection from "./src/ws/wsLesson.js";
 import audioWSConnection from "./src/ws/wsAudio.js";
 import sttWSConnection from "./src/ws/wsSTT.js"; 
 import { createSession } from "./src/services/sessionService.js";
+import lessonRoutes from "./src/routes/lessonRoutes.js";
 
 // ==========================================
 // ROUTE IMPORTS (Ollama / Quizzes / Flashcards)
@@ -129,8 +131,12 @@ app.use("/api/mveg", chatRoutes);
 app.use("/api/mveg", explanationRoutes);
 app.use("/api/mveg", studyToolsRoutes);
 
-// Your WS/Slides Routes
+
+
+
+// Your WS/Slides Routes -Sarangi
 app.use("/slides", slidesRoutes);
+app.use("/api/lessons", lessonRoutes);
 
 // Your Ollama / Quiz Routes
 app.use("/api/materials", materialRoutes);
@@ -178,47 +184,692 @@ app.post("/regenerate", protect, regenerateQuiz);
 /* ============================================================
    VISEME GENERATOR & ELEVENLABS TTS LOGIC
 ============================================================ */
-function estimateDurationMs(text) {
-  const words = (text || "").trim().split(/\s+/).filter(Boolean).length || 1;
-  const sec = words / 2.3; // ~140 wpm
+function estimateDurationMs(text = "") {
+  const words =
+    String(text || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length || 1;
+
+  const sec = words / 2.3;
   return Math.max(1200, Math.round(sec * 1000));
 }
 
 function visemeFromText(text, durationMs) {
-  const s = (text || "").toLowerCase().replace(/\s+/g, " ").trim();
-  const totalSec = Math.max(1.2, (durationMs || 1500) / 1000);
-  const n = Math.max(1, s.length);
+  const raw = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
 
-  const pick = (ch) => {
-    if ("ae".includes(ch)) return "AA";
-    if (ch === "i") return "EE";
-    if (ch === "o") return "OH";
-    if (ch === "u") return "OO";
-    if ("fvw".includes(ch)) return "FV";
-    if ("bmp".includes(ch)) return "MBP";
-    if ("szxctk".includes(ch)) return "SS";
-    if (ch === " ") return "SIL";
+  const totalSec = Math.max(1.2, (durationMs || 1500) / 1000);
+
+  if (!raw) {
+    return [
+      { t: 0, v: "SIL" },
+      { t: Number(totalSec.toFixed(3)), v: "SIL" },
+    ];
+  }
+
+  function isSinhala(ch) {
+    return /[\u0D80-\u0DFF]/.test(ch);
+  }
+
+  function isTamil(ch) {
+    return /[\u0B80-\u0BFF]/.test(ch);
+  }
+
+  function isPunctuation(ch) {
+    return /[.,!?;:()[\]{}'"“”‘’\-–—।॥]/.test(ch);
+  }
+
+  function pickEnglish(ch) {
+    const lower = ch.toLowerCase();
+
+    if ("a".includes(lower)) return "AA";
+    if ("ei".includes(lower)) return "EE";
+    if ("o".includes(lower)) return "OH";
+    if ("u".includes(lower)) return "OO";
+
+    if ("bmp".includes(lower)) return "MBP";
+    if ("fv".includes(lower)) return "FV";
+    if ("szxctjkgdq".includes(lower)) return "SS";
+    if ("w".includes(lower)) return "OO";
+    if ("rlhyn".includes(lower)) return "AA";
+
     return "AA";
-  };
+  }
+
+  function pickSinhala(ch) {
+    if ("අආඇඈාැෑ".includes(ch)) return "AA";
+    if ("ඉඊිීඑඒෙේෛ".includes(ch)) return "EE";
+    if ("උඌුූ".includes(ch)) return "OO";
+    if ("ඔඕොෝෞ".includes(ch)) return "OH";
+
+    if ("බභපඵමඹ".includes(ch)) return "MBP";
+    if ("ෆව".includes(ch)) return "FV";
+    if ("සශෂචඡජඣකඛගඝටඨඩඪතථදධ".includes(ch)) return "SS";
+    if ("නණංඞඬරලළයහ".includes(ch)) return "AA";
+
+    return "AA";
+  }
+
+  function pickTamil(ch) {
+    if ("அஆா".includes(ch)) return "AA";
+    if ("இஈிீஎஏெேை".includes(ch)) return "EE";
+    if ("உஊுூ".includes(ch)) return "OO";
+    if ("ஒஓொோௌ".includes(ch)) return "OH";
+
+    if ("பம".includes(ch)) return "MBP";
+    if ("வ".includes(ch)) return "FV";
+    if ("சஜஷஸஹகடதற".includes(ch)) return "SS";
+    if ("னநணஙஞரலளழய".includes(ch)) return "AA";
+
+    return "AA";
+  }
+
+  function pickViseme(ch) {
+    if (ch === " ") return "SIL";
+    if (isPunctuation(ch)) return "SIL";
+    if (isSinhala(ch)) return pickSinhala(ch);
+    if (isTamil(ch)) return pickTamil(ch);
+    return pickEnglish(ch);
+  }
+
+  function getWeight(ch) {
+    if (ch === " ") return 0.45;
+    if (isPunctuation(ch)) return 0.8;
+
+    const lower = ch.toLowerCase();
+
+    if ("aeiou".includes(lower)) return 1.2;
+
+    if ("අආඇඈාැෑඉඊිීඋඌුූඑඒෙේඔඕොෝෞ".includes(ch)) {
+      return 1.2;
+    }
+
+    if ("அஆாஇஈிீஉஊுூஎஏெேஒஓொோௌ".includes(ch)) {
+      return 1.2;
+    }
+
+    return 0.85;
+  }
+
+  const chars = [...raw];
+  const totalWeight = chars.reduce((sum, ch) => sum + getWeight(ch), 0) || 1;
 
   const out = [];
-  let last = "SIL";
+  let currentTime = 0;
+  let lastViseme = "SIL";
+  let lastEventTime = -1;
 
-  for (let i = 0; i < n; i++) {
-    const v = pick(s[i]);
-    const t = (i / n) * totalSec;
+  function pushEvent(t, v, force = false) {
+    const fixedT = Number(Math.max(0, Math.min(t, totalSec)).toFixed(3));
 
-    if (v !== last) {
-      out.push({ t: Number(t.toFixed(3)), v });
-      last = v;
+    if (!force && v === lastViseme && fixedT - lastEventTime < 0.13) {
+      return;
+    }
+
+    out.push({ t: fixedT, v });
+    lastViseme = v;
+    lastEventTime = fixedT;
+  }
+
+  pushEvent(0, "SIL", true);
+
+  for (const ch of chars) {
+    const weight = getWeight(ch);
+    const segmentDuration = (weight / totalWeight) * totalSec;
+    const v = pickViseme(ch);
+
+    const eventTime = currentTime + Math.min(0.04, segmentDuration * 0.25);
+
+    if (v === "SIL") {
+      pushEvent(currentTime, "SIL");
+    } else {
+      pushEvent(eventTime, v);
+    }
+
+    currentTime += segmentDuration;
+  }
+
+  const refreshed = [];
+
+  for (let i = 0; i < out.length; i += 1) {
+    const current = out[i];
+    const next = out[i + 1];
+
+    refreshed.push(current);
+
+    if (!next) continue;
+
+    const gap = next.t - current.t;
+
+    if (gap > 0.32 && current.v !== "SIL") {
+      const count = Math.floor(gap / 0.26);
+
+      for (let j = 1; j <= count; j += 1) {
+        const t = current.t + j * 0.26;
+
+        if (t < next.t - 0.07) {
+          refreshed.push({
+            t: Number(t.toFixed(3)),
+            v: current.v,
+          });
+        }
+      }
     }
   }
 
-  out.push({ t: Number(totalSec.toFixed(3)), v: "SIL" });
-  return out;
+  refreshed.push({
+    t: Number(totalSec.toFixed(3)),
+    v: "SIL",
+  });
+
+  return refreshed
+    .sort((a, b) => a.t - b.t)
+    .filter((item, index, arr) => {
+      if (index === 0) return true;
+
+      const prev = arr[index - 1];
+      return !(item.t === prev.t && item.v === prev.v);
+    });
 }
 
-async function generateSpeech(text) {
+function normalizeTalkLanguageMode(languageMode = "english") {
+  const mode = String(languageMode || "english").toLowerCase().trim();
+
+  if (["english", "sinhala", "singlish", "tamil"].includes(mode)) {
+    return mode;
+  }
+
+  return "english";
+}
+
+function getBooleanEnv(name, defaultValue = false) {
+  const value = process.env[name];
+
+  if (value === undefined) return defaultValue;
+
+  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
+}
+
+/* ============================================================
+   HYBRID TTS
+   English / Tamil / Singlish -> ElevenLabs
+   Sinhala -> Google Sinhala fallback
+============================================================ */
+
+function normalizeTalkLanguageMode(languageMode = "english") {
+  const mode = String(languageMode || "english").toLowerCase().trim();
+
+  if (["english", "sinhala", "singlish", "tamil"].includes(mode)) {
+    return mode;
+  }
+
+  return "english";
+}
+
+function getBooleanEnv(name, defaultValue = false) {
+  const value = process.env[name];
+
+  if (value === undefined) return defaultValue;
+
+  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
+}
+
+function getElevenLabsVoiceId(languageMode = "english") {
+  const mode = normalizeTalkLanguageMode(languageMode);
+
+  if (mode === "tamil") {
+    return (
+      process.env.ELEVENLABS_TAMIL_VOICE_ID ||
+      process.env.ELEVENLABS_VOICE_ID ||
+      ""
+    );
+  }
+
+  if (mode === "singlish") {
+    return (
+      process.env.ELEVENLABS_SINGLISH_VOICE_ID ||
+      process.env.ELEVENLABS_VOICE_ID ||
+      ""
+    );
+  }
+
+  return (
+    process.env.ELEVENLABS_ENGLISH_VOICE_ID ||
+    process.env.ELEVENLABS_VOICE_ID ||
+    ""
+  );
+}
+
+function getElevenLabsLanguageCode(languageMode = "english") {
+  const mode = normalizeTalkLanguageMode(languageMode);
+
+  if (mode === "tamil") return "ta";
+  if (mode === "singlish") return "en";
+  return "en";
+}
+
+function shouldUseGoogleSinhalaFallback(languageMode = "english") {
+  const mode = normalizeTalkLanguageMode(languageMode);
+
+  const provider = String(process.env.SINHALA_TTS_PROVIDER || "google")
+    .toLowerCase()
+    .trim();
+
+  return mode === "sinhala" && provider === "google";
+}
+
+function cleanTextForSpeech(text = "") {
+  let clean = String(text || "");
+
+  // Remove fenced code blocks
+  clean = clean.replace(/```[\s\S]*?```/g, " ");
+
+  // Inline code: `text` -> text
+  clean = clean.replace(/`([^`]+)`/g, "$1");
+
+  // Markdown links: [text](url) -> text
+  clean = clean.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1");
+
+  // Raw URLs
+  clean = clean.replace(/https?:\/\/\S+/g, " ");
+
+  // Markdown headings
+  clean = clean.replace(/^#{1,6}\s+/gm, "");
+
+  // Markdown blockquotes
+  clean = clean.replace(/^>\s?/gm, "");
+
+  // Bullet markers
+  clean = clean.replace(/^\s*[-*+]\s+/gm, "");
+
+  // Numbered lists
+  clean = clean.replace(/^\s*(\d+)\.\s+/gm, "$1. ");
+
+  // Bold / italic / strike markers
+  clean = clean.replace(/[*_~]+/g, "");
+
+  // Table symbols and backslashes
+  clean = clean.replace(/[|\\]/g, " ");
+
+  // Slash often sounds awkward in Sinhala/Tamil TTS
+  clean = clean.replace(/\s*\/\s*/g, " ");
+
+  // Symbols often spoken aloud by Google/ElevenLabs
+  clean = clean.replace(/[#$%^&={}\[\]<>]/g, " ");
+
+  // Decorative bullets
+  clean = clean.replace(/[•●◆■□▪▫]+/g, " ");
+
+  // Repeated whitespace
+  clean = clean.replace(/\s+/g, " ").trim();
+
+  return clean;
+}
+
+function getSafeTTSText(text = "") {
+  const cleanText = cleanTextForSpeech(text);
+
+  const maxChars = Number(process.env.ELEVENLABS_TTS_MAX_CHARS || 1800);
+
+  if (cleanText.length <= maxChars) {
+    return {
+      text: cleanText,
+      truncated: false,
+      originalLength: String(text || "").length,
+    };
+  }
+
+  return {
+    text: `${cleanText.slice(0, maxChars).trim()}...`,
+    truncated: true,
+    originalLength: String(text || "").length,
+  };
+}
+
+function splitTextForTTS(text = "", maxLength = 180) {
+  const cleanText = String(text || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleanText) return [];
+
+  const sentences =
+    cleanText.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [cleanText];
+
+  const chunks = [];
+  let current = "";
+
+  for (const sentence of sentences) {
+    const part = sentence.trim();
+    if (!part) continue;
+
+    const next = `${current} ${part}`.trim();
+
+    if (next.length <= maxLength) {
+      current = next;
+      continue;
+    }
+
+    if (current) {
+      chunks.push(current);
+      current = "";
+    }
+
+    if (part.length <= maxLength) {
+      current = part;
+    } else {
+      for (let i = 0; i < part.length; i += maxLength) {
+        chunks.push(part.slice(i, i + maxLength));
+      }
+    }
+  }
+
+  if (current) chunks.push(current);
+
+  return chunks;
+}
+
+function buildTTSCacheKey({ provider, text, languageMode, voiceId, modelId }) {
+  return crypto
+    .createHash("sha256")
+    .update(`${provider}|${languageMode}|${voiceId}|${modelId}|${text}`)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+/* -----------------------------
+   ElevenLabs TTS
+----------------------------- */
+
+async function generateElevenLabsSpeech({
+  text,
+  languageMode,
+  outputPath,
+  voiceId,
+  modelId,
+}) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("Missing ELEVENLABS_API_KEY in .env");
+  }
+
+  if (!voiceId) {
+    throw new Error("Missing ELEVENLABS_VOICE_ID in .env");
+  }
+
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`;
+
+  const body = {
+    text,
+    model_id: modelId,
+    voice_settings: {
+      stability: Number(process.env.ELEVENLABS_STABILITY || 0.5),
+      similarity_boost: Number(process.env.ELEVENLABS_SIMILARITY_BOOST || 0.75),
+      style: Number(process.env.ELEVENLABS_STYLE || 0.35),
+      use_speaker_boost: getBooleanEnv("ELEVENLABS_USE_SPEAKER_BOOST", true),
+    },
+  };
+
+  if (getBooleanEnv("ELEVENLABS_FORCE_LANGUAGE_CODE", false)) {
+    body.language_code = getElevenLabsLanguageCode(languageMode);
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "xi-api-key": apiKey,
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+
+    console.error("ElevenLabs TTS error:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorText,
+    });
+
+    if (response.status === 401) {
+      throw new Error("ElevenLabs API key is invalid. Check ELEVENLABS_API_KEY.");
+    }
+
+    if (response.status === 402) {
+      throw new Error(
+        "ElevenLabs credits or billing problem. Check your plan and available credits."
+      );
+    }
+
+    if (response.status === 404) {
+      throw new Error("ElevenLabs voice ID not found. Check ELEVENLABS_VOICE_ID.");
+    }
+
+    throw new Error(`ElevenLabs TTS failed with status ${response.status}`);
+  }
+
+  const audioBuffer = Buffer.from(await response.arrayBuffer());
+
+  if (!audioBuffer.length) {
+    throw new Error("ElevenLabs returned empty audio.");
+  }
+
+  fs.writeFileSync(outputPath, audioBuffer);
+
+  return audioBuffer.length;
+}
+
+/* -----------------------------
+   Google Sinhala fallback TTS
+----------------------------- */
+
+async function downloadGoogleTTSChunk({ text, lang }) {
+  const params = new URLSearchParams({
+    ie: "UTF-8",
+    q: text,
+    tl: lang,
+    client: "tw-ob",
+  });
+
+  const url = `https://translate.google.com/translate_tts?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+      Referer: "https://translate.google.com/",
+      Accept: "audio/mpeg,audio/*,*/*",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => "");
+
+    throw new Error(
+      `Google Sinhala TTS failed with status ${response.status}. ${errorText.slice(
+        0,
+        160
+      )}`
+    );
+  }
+
+  return Buffer.from(await response.arrayBuffer());
+}
+
+async function generateGoogleSinhalaSpeech({ text, outputPath }) {
+  const chunks = splitTextForTTS(text, 180);
+
+  if (!chunks.length) {
+    throw new Error("No Sinhala text provided for fallback TTS.");
+  }
+
+  const audioBuffers = [];
+
+  for (const chunk of chunks) {
+    const audioBuffer = await downloadGoogleTTSChunk({
+      text: chunk,
+      lang: "si",
+    });
+
+    audioBuffers.push(audioBuffer);
+  }
+
+  if (!audioBuffers.length) {
+    throw new Error("Google Sinhala TTS returned empty audio.");
+  }
+
+  const finalBuffer = Buffer.concat(audioBuffers);
+  fs.writeFileSync(outputPath, finalBuffer);
+
+  return {
+    audioBytes: finalBuffer.length,
+    chunkCount: chunks.length,
+  };
+}
+
+/* ============================================================
+   MAIN TTS ROUTE
+============================================================ */
+
+app.post("/api/talk", async (req, res) => {
+  try {
+    const { text = "", language = "english", languageMode = "" } = req.body;
+
+    const cleanInputText = String(text || "").trim();
+
+    if (!cleanInputText) {
+      return res.status(400).json({
+        ok: false,
+        error: "text required",
+      });
+    }
+
+    const selectedLanguageMode = normalizeTalkLanguageMode(
+      languageMode || language
+    );
+
+    const safeTTS = getSafeTTSText(cleanInputText);
+
+    if (!safeTTS.text) {
+      return res.status(400).json({
+        ok: false,
+        error: "cleaned text is empty",
+      });
+    }
+
+    const outDir = path.join(process.cwd(), "src", "output", "generated");
+
+    if (!fs.existsSync(outDir)) {
+      fs.mkdirSync(outDir, { recursive: true });
+    }
+
+    const useSinhalaFallback =
+      shouldUseGoogleSinhalaFallback(selectedLanguageMode);
+
+    const provider = useSinhalaFallback ? "google-sinhala" : "elevenlabs";
+
+    const modelId = useSinhalaFallback
+      ? "google-translate-tts-si"
+      : process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
+
+    const voiceId = useSinhalaFallback
+      ? "google-si-default"
+      : getElevenLabsVoiceId(selectedLanguageMode);
+
+    const cacheKey = buildTTSCacheKey({
+      provider,
+      text: safeTTS.text,
+      languageMode: selectedLanguageMode,
+      voiceId,
+      modelId,
+    });
+
+    const fileName = `${provider}_${cacheKey}.mp3`;
+    const outputPath = path.join(outDir, fileName);
+
+    let cached = false;
+    let audioBytes = 0;
+    let chunkCount = 1;
+
+    if (fs.existsSync(outputPath)) {
+      cached = true;
+      audioBytes = fs.statSync(outputPath).size;
+
+      console.log("TTS cache hit:", {
+        provider,
+        languageMode: selectedLanguageMode,
+        fileName,
+      });
+    } else if (useSinhalaFallback) {
+      console.log("Sinhala fallback TTS:", {
+        provider,
+        languageMode: selectedLanguageMode,
+        chars: safeTTS.text.length,
+        truncated: safeTTS.truncated,
+      });
+
+      const googleResult = await generateGoogleSinhalaSpeech({
+        text: safeTTS.text,
+        outputPath,
+      });
+
+      audioBytes = googleResult.audioBytes;
+      chunkCount = googleResult.chunkCount;
+    } else {
+      console.log("ElevenLabs TTS:", {
+        provider,
+        languageMode: selectedLanguageMode,
+        voiceId,
+        modelId,
+        chars: safeTTS.text.length,
+        truncated: safeTTS.truncated,
+      });
+
+      audioBytes = await generateElevenLabsSpeech({
+        text: safeTTS.text,
+        languageMode: selectedLanguageMode,
+        outputPath,
+        voiceId,
+        modelId,
+      });
+    }
+
+    const durationMs = estimateDurationMs(safeTTS.text);
+    const visemes = visemeFromText(safeTTS.text, durationMs);
+
+    return res.json({
+      ok: true,
+      provider,
+      cached,
+      languageMode: selectedLanguageMode,
+      voiceId,
+      modelId,
+      audioBytes,
+      chunkCount,
+      truncated: safeTTS.truncated,
+      originalLength: safeTTS.originalLength,
+      spokenLength: safeTTS.text.length,
+      audioUrl: `/output/generated/${fileName}`,
+      durationMs,
+      visemes,
+    });
+  } catch (e) {
+    console.error("/api/talk TTS error:", e);
+
+    return res.status(500).json({
+      ok: false,
+      error: e?.message || "TTS failed",
+    });
+  }
+});
+
+/*async function generateSpeech(text) {
   console.log("🔊 ElevenLabs TTS:", text);
 
   const apiKey = process.env.ELEVEN_API_KEY;
@@ -286,7 +937,7 @@ app.post("/api/talk", async (req, res) => {
     console.error("❌ Error in /api/talk:", err);
     return res.status(500).json({ ok: false, error: err.message || "TTS failed" });
   }
-});
+});*/
 
 /* ============================================================
    GLOBAL ERROR HANDLER
