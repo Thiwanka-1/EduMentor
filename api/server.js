@@ -374,15 +374,7 @@ function visemeFromText(text, durationMs) {
     });
 }
 
-function normalizeTalkLanguageMode(languageMode = "english") {
-  const mode = String(languageMode || "english").toLowerCase().trim();
 
-  if (["english", "sinhala", "singlish", "tamil"].includes(mode)) {
-    return mode;
-  }
-
-  return "english";
-}
 
 function getBooleanEnv(name, defaultValue = false) {
   const value = process.env[name];
@@ -408,13 +400,6 @@ function normalizeTalkLanguageMode(languageMode = "english") {
   return "english";
 }
 
-function getBooleanEnv(name, defaultValue = false) {
-  const value = process.env[name];
-
-  if (value === undefined) return defaultValue;
-
-  return ["true", "1", "yes", "on"].includes(String(value).toLowerCase());
-}
 
 function getElevenLabsVoiceId(languageMode = "english") {
   const mode = normalizeTalkLanguageMode(languageMode);
@@ -763,7 +748,7 @@ app.post("/api/talk", async (req, res) => {
       });
     }
 
-    const outDir = path.join(process.cwd(), "src", "output", "generated");
+    const outDir = path.join(outputDir, "generated");
 
     if (!fs.existsSync(outDir)) {
       fs.mkdirSync(outDir, { recursive: true });

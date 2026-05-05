@@ -1,96 +1,110 @@
-import dotenv from "dotenv";
-dotenv.config();
+import mongoose from "mongoose";
 
-import { OpenAI } from "openai";
-import Explanation from "../models/Explanation.js";
+const MessageSchema = new mongoose.Schema(
+  {
+    role: {
+      type: String,
+      enum: ["user", "tutor", "system"],
+      required: true,
+    },
+    text: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    messageType: {
+      type: String,
+      enum: ["text", "voice", "file", "lesson", "motivation", "system"],
+      default: "text",
+    },
+    audioUrl: {
+      type: String,
+      default: "",
+    },
+    videoUrl: {
+      type: String,
+      default: "",
+    },
+  },
+  { timestamps: true }
+);
 
-const client = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
-  apiKey: process.env.HF_TOKEN,
-});
+const LessonSessionSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
-function safeJsonParse(str) {
-  try {
-    return JSON.parse(str);
-  } catch {
-    return null;
-  }
-}
+    title: {
+      type: String,
+      default: "Untitled Lesson",
+      trim: true,
+    },
 
-export async function getRelatedConcepts(req, res) {
-  try {
-    const { id } = req.params;
+    topic: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
 
-    // ✅ only owner can access this explanation
-    const doc = await Explanation.findOne({
-      _id: id,
-      user: req.user._id,
-    }).select("_id question title mode answer views");
+    languageMode: {
+      type: String,
+      enum: ["english", "sinhala", "singlish","tamil"],
+      default: "english",
+    },
 
-    if (!doc) {
-      return res.status(404).json({ error: "Not found" });
-    }
+    docId: {
+      type: String,
+      default: "",
+    },
 
-    const question = doc.question || "";
-    const answer =
-      doc.views?.[doc.mode] || doc.answer || doc.views?.simple || "";
+    sourceType: {
+      type: String,
+      enum: ["text", "voice", "document"],
+      default: "text",
+    },
 
-    const completion = await client.chat.completions.create({
-      model: process.env.HF_MODEL,
-      messages: [
-        {
-          role: "system",
-          content: `
-You generate related academic concepts for CS/SE/IT students.
+    lessonStarted: {
+      type: Boolean,
+      default: false,
+    },
 
-Return ONLY valid JSON in this exact format:
-{"related":["topic 1","topic 2","topic 3","topic 4","topic 5"]}
+    notesText: {
+      type: String,
+      default: "",
+    },
 
-Rules:
-- topics must be CS/SE/IT academic concepts
-- short titles only (2–6 words)
-- no numbering
-- no explanations
-- no markdown
-- no extra keys
-- avoid duplicates
-          `.trim(),
-        },
-        {
-          role: "user",
-          content: `QUESTION:\n${question}\n\nANSWER:\n${answer}`,
-        },
-      ],
-      temperature: 0.2,
-      max_tokens: 120,
-    });
+    summaryText: {
+      type: String,
+      default: "",
+    },
 
-    const raw = (completion?.choices?.[0]?.message?.content || "").trim();
-    const parsed = safeJsonParse(raw);
+    audioUrl: {
+      type: String,
+      default: "",
+    },
 
-    const related = Array.isArray(parsed?.related)
-      ? parsed.related
-          .map((x) => String(x).trim())
-          .filter(Boolean)
-          .slice(0, 5)
-      : [];
+    videoUrl: {
+      type: String,
+      default: "",
+    },
 
-    const finalRelated =
-      related.length > 0
-        ? related
-        : [
-            "Concept review",
-            "Common exam questions",
-            "Practical examples",
-            "Related theory",
-            "Important comparisons",
-          ];
+    messages: {
+      type: [MessageSchema],
+      default: [],
+    },
 
-    return res.json({ related: finalRelated });
-  } catch (err) {
-    console.error("Related concepts error:", err);
-    return res
-      .status(500)
-      .json({ error: "Failed to generate related concepts" });
-  }
-}
+    lastActivityAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model("LessonSession", LessonSessionSchema);
